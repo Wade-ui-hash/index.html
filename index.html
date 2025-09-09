@@ -5,10 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Interactive Monthly Planner</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Chosen Palette: Warm Neutrals -->
-    <!-- Application Structure Plan: The SPA is designed as an interactive weekly planner. A top-level tabbed navigation allows the user to switch between the four weeks, dynamically displaying the relevant tasks for that period. This structure was chosen over a static table to improve focus and reduce information overload. Tasks are grouped by frequency (Daily, Weekly, Monthly) into cards for clarity. A separate, dynamic section for deadlines allows users to not only view but also add new deadlines, transforming the static report into a usable tool. -->
-    <!-- Visualization & Content Choices: Report Info: Weekly tasks (Content Creation, SEO, etc.). Goal: Organize. Presentation: Interactive cards displayed based on weekly navigation. Interaction: Clicking week buttons updates the view. Justification: Focuses user on one week at a time. Method: HTML/CSS/JS. | Report Info: Deadlines. Goal: Inform & Manage. Presentation: A list and an input form. Interaction: User can add new items to the list via the form. Justification: Adds interactivity and utility. Method: HTML/JS Form Handling. | No quantitative data exists in the report, so no charts are used. -->
-    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
         body {
@@ -100,38 +96,31 @@
             </nav>
 
             <div id="planner-content">
-                <!-- Content will be dynamically inserted here -->
-            </div>
+                </div>
             
             <section id="deadlines-section" class="mt-10 bg-white p-6 rounded-xl shadow-sm">
                  <h2 class="text-2xl font-bold text-gray-800 mb-4 border-b-2 border-gray-200 pb-2">Upcoming Deadlines</h2>
                  <p class="text-gray-600 mb-6">Use this section to track specific deadlines for projects and tasks. Add new deadlines using the form below.</p>
                  <ul id="deadline-list" class="space-y-3 mb-8">
-                    <li class="p-4 bg-gray-100 rounded-lg flex items-center justify-between">
-                        <div>
-                           <span class="font-semibold text-gray-700">[Date]:</span>
-                           <span class="text-gray-600"> [Project/Task Name] - [Client Name]</span>
-                        </div>
-                    </li>
-                 </ul>
+                   </ul>
                  <div class="mt-6">
                      <h3 class="text-xl font-semibold text-gray-800 mb-3">Add a New Deadline</h3>
                      <form id="add-deadline-form" class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
-                         <div class="md:col-span-1">
-                             <label for="deadline-date" class="block text-sm font-medium text-gray-700">Date</label>
-                             <input type="date" id="deadline-date" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 p-2 bg-white text-gray-900">
-                         </div>
-                         <div class="md:col-span-2">
-                             <label for="deadline-task" class="block text-sm font-medium text-gray-700">Project/Task Name</label>
-                             <input type="text" id="deadline-task" placeholder="e.g., Finalize Q3 Report" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 p-2 bg-white text-gray-900">
-                         </div>
                           <div class="md:col-span-1">
-                             <label for="deadline-client" class="block text-sm font-medium text-gray-700">Client</label>
-                             <input type="text" id="deadline-client" placeholder="e.g., Client Inc." required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 p-2 bg-white text-gray-900">
-                         </div>
-                         <button type="submit" class="w-full md:w-auto md:col-start-4 bg-[#E42642] text-white font-semibold py-2 px-6 rounded-lg hover:bg-opacity-90 transition-colors">Add Deadline</button>
+                               <label for="deadline-date" class="block text-sm font-medium text-gray-700">Date</label>
+                               <input type="date" id="deadline-date" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 p-2 bg-white text-gray-900">
+                            </div>
+                           <div class="md:col-span-2">
+                               <label for="deadline-task" class="block text-sm font-medium text-gray-700">Project/Task Name</label>
+                               <input type="text" id="deadline-task" placeholder="e.g., Finalize Q3 Report" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 p-2 bg-white text-gray-900">
+                            </div>
+                             <div class="md:col-span-1">
+                               <label for="deadline-client" class="block text-sm font-medium text-gray-700">Client</label>
+                               <input type="text" id="deadline-client" placeholder="e.g., Client Inc." required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 p-2 bg-white text-gray-900">
+                            </div>
+                           <button type="submit" class="w-full md:w-auto md:col-start-4 bg-[#E42642] text-white font-semibold py-2 px-6 rounded-lg hover:bg-opacity-90 transition-colors">Add Deadline</button>
                      </form>
-                 </div>
+                   </div>
             </section>
             <section id="clients-section" class="mt-10 bg-white p-6 rounded-xl shadow-sm">
                 <h2 class="text-2xl font-bold text-gray-800 mb-4 border-b-2 border-gray-200 pb-2">Active Clients</h2>
@@ -139,36 +128,34 @@
                     <div class="flex items-center gap-2">
                          <label for="filter-clients" class="text-sm font-medium text-gray-700">Filter by:</label>
                          <select id="filter-clients" class="bg-white text-gray-900 rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 p-2 text-sm">
-                            <option value="all">All</option>
-                            <option value="incomplete">Incomplete</option>
-                            <option value="complete">Complete</option>
+                              <option value="all">All</option>
+                              <option value="incomplete">Incomplete</option>
+                              <option value="complete">Complete</option>
                          </select>
-                    </div>
+                     </div>
                     <div class="flex justify-end gap-2">
-                        <button id="undo-client-btn" class="bg-gray-200 text-gray-600 font-semibold py-2 px-6 rounded-lg hover:bg-gray-300 transition-colors hidden">Undo Remove</button>
-                        <button id="add-client-btn" class="bg-[#E42642] text-white font-semibold py-2 px-6 rounded-lg hover:bg-opacity-90 transition-colors">Add New Client</button>
+                         <button id="undo-client-btn" class="bg-gray-200 text-gray-600 font-semibold py-2 px-6 rounded-lg hover:bg-gray-300 transition-colors hidden">Undo Remove</button>
+                         <button id="add-client-btn" class="bg-[#E42642] text-white font-semibold py-2 px-6 rounded-lg hover:bg-opacity-90 transition-colors">Add New Client</button>
                     </div>
                 </div>
                 <div class="overflow-x-auto">
                     <table class="min-w-full divide-y divide-gray-200">
                         <thead>
-                            <tr>
-                                <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider sortable-header" data-sort-key="company">Company</th>
-                                <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider sortable-header" data-sort-key="services">Services</th>
-                                <th class="px-4 py-3 text-center text-sm font-semibold text-gray-700 uppercase tracking-wider">Complete</th>
-                                <th class="px-4 py-3 text-center text-sm font-semibold text-gray-700 uppercase tracking-wider">Actions</th>
-                            </tr>
+                             <tr>
+                                 <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider sortable-header" data-sort-key="company">Company</th>
+                                 <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider sortable-header" data-sort-key="services">Services</th>
+                                 <th class="px-4 py-3 text-center text-sm font-semibold text-gray-700 uppercase tracking-wider">Complete</th>
+                                 <th class="px-4 py-3 text-center text-sm font-semibold text-gray-700 uppercase tracking-wider">Actions</th>
+                             </tr>
                         </thead>
                         <tbody id="client-table-body" class="bg-white divide-y divide-gray-200">
-                            <!-- Client rows will be dynamically inserted here -->
-                        </tbody>
-                    </table>
+                             </tbody>
+                   </table>
                 </div>
             </section>
         </main>
     </div>
 
-    <!-- The Confirmation Modal -->
     <div id="add-client-modal" class="modal hidden">
         <div class="modal-content bg-white p-6 rounded-xl shadow-lg">
             <span id="close-modal-btn" class="close-btn">&times;</span>
@@ -190,14 +177,22 @@
         </div>
     </div>
 
-
     <script>
         document.addEventListener('DOMContentLoaded', () => {
+            // --- localStorage Keys ---
+            const STORAGE_KEYS = {
+                DEADLINES: 'monthlyPlannerDeadlines',
+                CLIENTS: 'monthlyPlannerClients',
+                ACTIVE_WEEK: 'monthlyPlannerActiveWeek' // To remember the last viewed week
+            };
+
             let lastRemovedClient = null;
             let sortDirection = {};
             let currentFilter = 'all';
 
-            const plannerData = {
+            // --- Initial Data Structures ---
+            // These are fallback defaults if localStorage is empty
+            const initialPlannerData = {
                 1: {
                     title: 'Content Creation Focus',
                     tasks: {
@@ -232,6 +227,31 @@
                 }
             };
 
+            // --- Load Data from localStorage ---
+            const loadData = (key) => {
+                const data = localStorage.getItem(key);
+                return data ? JSON.parse(data) : null;
+            };
+
+            // --- Save Data to localStorage ---
+            const saveData = (key, data) => {
+                localStorage.setItem(key, JSON.stringify(data));
+            };
+
+            // --- Initialize Data ---
+            let plannerData = loadData(STORAGE_KEYS.ACTIVE_WEEK) ? initialPlannerData : initialPlannerData; // Use initial if no saved week, otherwise use loaded week data
+            let deadlines = loadData(STORAGE_KEYS.DEADLINES) || [];
+            let clientData = loadData(STORAGE_KEYS.CLIENTS) || [
+                { company: 'Prominent Roofing', services: 'Google Ads, 1 SEO blog, 4 posts', complete: false },
+                { company: 'CFO Connect', services: 'Google Ads, 1 SEO blog', complete: false },
+                { company: 'The Green Zone', services: 'Google Ads, 1 SEO blog, 8 posts', complete: false },
+                { company: 'Atzaro', services: 'Google Ads, 4 SEO blogs, 16 posts', complete: false },
+                { company: 'Landy Logic', services: 'Google Ads, 4 posts', complete: false },
+                { company: 'Absolute Ablutions', services: 'Google Ads, 2 SEO blogs', complete: false }
+            ];
+            let activeWeek = parseInt(loadData(STORAGE_KEYS.ACTIVE_WEEK)) || 1; // Default to Week 1
+
+            // --- DOM Elements ---
             const navigation = document.getElementById('week-navigation');
             const contentContainer = document.getElementById('planner-content');
             const deadlineForm = document.getElementById('add-deadline-form');
@@ -250,13 +270,13 @@
             const closeModalBtn = document.getElementById('close-modal-btn');
             const cancelNewClientBtn = document.getElementById('cancel-new-client-btn');
 
-
+            // --- Render Functions ---
             const renderWeekContent = (week) => {
                 const weekData = plannerData[week];
                 if (!weekData) return;
 
                 let monthlyTasksHtml = '';
-                if (weekData.tasks.monthly.length > 0) {
+                if (weekData.tasks.monthly && weekData.tasks.monthly.length > 0) {
                     monthlyTasksHtml = `
                         <div class="task-card bg-white p-6 rounded-xl shadow-sm">
                             <h3 class="text-xl font-semibold text-gray-800 mb-3">Monthly Tasks</h3>
@@ -269,31 +289,90 @@
                     <section id="week-${week}-content" class="bg-gray-100 p-6 rounded-xl">
                          <h2 class="text-2xl font-bold text-gray-800 mb-4 text-center">${weekData.title}</h2>
                          <div class="grid grid-cols-1 md:grid-cols-2 ${monthlyTasksHtml ? 'lg:grid-cols-3' : ''} gap-6">
-                             <div class="task-card bg-white p-6 rounded-xl shadow-sm">
-                                 <h3 class="text-xl font-semibold text-gray-800 mb-3">Daily Tasks</h3>
-                                 <ul class="text-gray-600">${weekData.tasks.daily.map(task => `<li>${task}</li>`).join('')}</ul>
-                             </div>
-                             <div class="task-card bg-white p-6 rounded-xl shadow-sm">
-                                 <h3 class="text-xl font-semibold text-gray-800 mb-3">Weekly Tasks</h3>
-                                 <ul class="text-gray-600">${weekData.tasks.weekly.map(task => `<li>${task}</li>`).join('')}</ul>
-                             </div>
-                             ${monthlyTasksHtml}
-                         </div>
+                              <div class="task-card bg-white p-6 rounded-xl shadow-sm">
+                                  <h3 class="text-xl font-semibold text-gray-800 mb-3">Daily Tasks</h3>
+                                  <ul class="text-gray-600">${weekData.tasks.daily.map(task => `<li>${task}</li>`).join('')}</ul>
+                              </div>
+                              <div class="task-card bg-white p-6 rounded-xl shadow-sm">
+                                  <h3 class="text-xl font-semibold text-gray-800 mb-3">Weekly Tasks</h3>
+                                  <ul class="text-gray-600">${weekData.tasks.weekly.map(task => `<li>${task}</li>`).join('')}</ul>
+                              </div>
+                                ${monthlyTasksHtml}
+                            </div>
                     </section>
                 `;
             };
 
+            const renderDeadlineList = () => {
+                deadlineList.innerHTML = ''; // Clear existing list
+                if (deadlines.length === 0) {
+                    deadlineList.innerHTML = '<li class="p-4 bg-gray-100 rounded-lg text-gray-500">No deadlines added yet.</li>';
+                    return;
+                }
+                deadlines.forEach(deadline => {
+                    const li = document.createElement('li');
+                    li.className = 'p-4 bg-gray-100 rounded-lg flex items-center justify-between';
+                    li.innerHTML = `
+                        <div>
+                           <span class="font-semibold text-gray-700">${new Date(deadline.date + 'T00:00:00').toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })}:</span>
+                           <span class="text-gray-600"> ${deadline.task} - ${deadline.client}</span>
+                        </div>
+                        <button class="remove-deadline text-red-400 hover:text-red-600 font-bold text-xl cursor-pointer">&times;</button>
+                    `;
+                    deadlineList.appendChild(li);
+                });
+            };
+
+            const renderClientTable = (data) => {
+                clientTableBody.innerHTML = '';
+                if (data.length === 0) {
+                    clientTableBody.innerHTML = '<tr><td colspan="4" class="p-4 text-center text-gray-500">No clients found.</td></tr>';
+                    return;
+                }
+                data.forEach(client => {
+                    const row = document.createElement('tr');
+                    row.className = `border-b border-gray-200 ${client.complete ? 'completed' : ''}`;
+                    row.innerHTML = `
+                        <td class="p-4 py-3 align-top">${client.company}</td>
+                        <td class="p-4 py-3 align-top">${client.services}</td>
+                        <td class="p-4 py-3 align-top text-center">
+                            <input type="checkbox" class="w-4 h-4 text-[#E42642] border-gray-300 rounded-sm focus:ring-[#E42642] bg-gray-100 client-complete-checkbox" ${client.complete ? 'checked' : ''}>
+                        </td>
+                        <td class="p-4 py-3 align-top text-center">
+                            <button class="remove-client-btn text-red-400 hover:text-red-600 font-bold text-xl cursor-pointer">&times;</button>
+                        </td>
+                    `;
+                    clientTableBody.appendChild(row);
+                });
+            };
+            
+            const filterAndRenderClients = () => {
+                let filteredData = [...clientData]; // Create a copy to avoid modifying the original array directly
+                if (currentFilter === 'complete') {
+                    filteredData = clientData.filter(client => client.complete);
+                } else if (currentFilter === 'incomplete') {
+                    filteredData = clientData.filter(client => !client.complete);
+                }
+                renderClientTable(filteredData);
+            };
+
+            // --- Event Listeners ---
+
+            // Navigation for Weeks
             navigation.addEventListener('click', (e) => {
-                if (e.target.tagName === 'BUTTON') {
+                if (e.target.classList.contains('nav-btn')) {
                     const week = e.target.dataset.week;
                     
                     document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
                     e.target.classList.add('active');
                     
                     renderWeekContent(week);
+                    activeWeek = parseInt(week); // Update active week
+                    saveData(STORAGE_KEYS.ACTIVE_WEEK, activeWeek); // Save active week
                 }
             });
 
+            // Add New Deadline
             deadlineForm.addEventListener('submit', (e) => {
                 e.preventDefault();
 
@@ -306,20 +385,10 @@
                 const client = clientInput.value.trim();
                 
                 if (date && task && client) {
-                    const li = document.createElement('li');
-                    li.className = 'p-4 bg-gray-100 rounded-lg flex items-center justify-between';
-                    li.innerHTML = `
-                        <div>
-                           <span class="font-semibold text-gray-700">${new Date(date + 'T00:00:00').toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })}:</span>
-                           <span class="text-gray-600"> ${task} - ${client}</span>
-                        </div>
-                        <button class="remove-deadline text-red-400 hover:text-red-600 font-bold text-xl">&times;</button>
-                    `;
-                    deadlineList.appendChild(li);
-
-                    if(deadlineList.children.length === 2 && deadlineList.firstElementChild.textContent.includes('[Date]')) {
-                         deadlineList.firstElementChild.remove();
-                    }
+                    deadlines.push({ date, task, client }); // Add to array
+                    deadlines.sort((a, b) => new Date(a.date) - new Date(b.date)); // Sort by date
+                    renderDeadlineList(); // Re-render the list
+                    saveData(STORAGE_KEYS.DEADLINES, deadlines); // Save to localStorage
 
                     dateInput.value = '';
                     taskInput.value = '';
@@ -327,66 +396,40 @@
                 }
             });
 
+            // Remove Deadline
             deadlineList.addEventListener('click', (e) => {
                 if (e.target.classList.contains('remove-deadline')) {
-                    e.target.parentElement.remove();
+                    const listItem = e.target.closest('li');
+                    const dateText = listItem.querySelector('span:first-child').textContent;
+                    const taskText = listItem.querySelector('span:nth-child(2)').textContent.split(' - ')[0];
+                    const clientText = listItem.querySelector('span:nth-child(2)').textContent.split(' - ')[1];
+                    
+                    deadlines = deadlines.filter(d => {
+                        const formattedDate = new Date(d.date + 'T00:00:00').toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
+                        return !(formattedDate === dateText && d.task === taskText && d.client === clientText);
+                    });
+
+                    renderDeadlineList();
+                    saveData(STORAGE_KEYS.DEADLINES, deadlines); // Save updated list
                 }
             });
             
-            renderWeekContent(1);
-
-            const clientData = [
-                { company: 'Prominent Roofing', services: 'Google Ads, 1 SEO blog, 4 posts', complete: false },
-                { company: 'CFO Connect', services: 'Google Ads, 1 SEO blog', complete: false },
-                { company: 'The Green Zone', services: 'Google Ads, 1 SEO blog, 8 posts', complete: false },
-                { company: 'Atzaro', services: 'Google Ads, 4 SEO blogs, 16 posts', complete: false },
-                { company: 'Landy Logic', services: 'Google Ads, 4 posts', complete: false },
-                { company: 'Absolute Ablutions', services: 'Google Ads, 2 SEO blogs', complete: false }
-            ];
-
-            const renderClientTable = (data) => {
-                clientTableBody.innerHTML = '';
-                data.forEach(client => {
-                    const row = document.createElement('tr');
-                    row.className = `border-b border-gray-200 ${client.complete ? 'completed' : ''}`;
-                    row.innerHTML = `
-                        <td class="p-4 py-3 align-top">${client.company}</td>
-                        <td class="p-4 py-3 align-top">${client.services}</td>
-                        <td class="p-4 py-3 align-top text-center">
-                            <input type="checkbox" class="w-4 h-4 text-[#E42642] border-gray-300 rounded-sm focus:ring-[#E42642] bg-gray-100" ${client.complete ? 'checked' : ''}>
-                        </td>
-                        <td class="p-4 py-3 align-top text-center">
-                            <button class="remove-client-btn text-red-400 hover:text-red-600 font-bold text-xl">&times;</button>
-                        </td>
-                    `;
-                    clientTableBody.appendChild(row);
-                });
-            };
-            
-            const filterAndRender = () => {
-                let filteredData = clientData;
-                if (currentFilter === 'complete') {
-                    filteredData = clientData.filter(client => client.complete);
-                } else if (currentFilter === 'incomplete') {
-                    filteredData = clientData.filter(client => !client.complete);
-                }
-                renderClientTable(filteredData);
-            };
-
+            // Open Add Client Modal
             addClientBtn.addEventListener('click', () => {
                 addClientModal.classList.remove('hidden');
                 newClientCompanyInput.value = '';
                 newClientServicesInput.value = '';
             });
 
+            // Close Add Client Modal
             closeModalBtn.addEventListener('click', () => {
                 addClientModal.classList.add('hidden');
             });
-
             cancelNewClientBtn.addEventListener('click', () => {
                 addClientModal.classList.add('hidden');
             });
 
+            // Add New Client Form Submission
             newClientForm.addEventListener('submit', (e) => {
                 e.preventDefault();
                 const newClient = {
@@ -396,47 +439,61 @@
                 };
                 if (newClient.company && newClient.services) {
                     clientData.push(newClient);
-                    filterAndRender();
+                    filterAndRenderClients();
                     addClientModal.classList.add('hidden');
+                    saveData(STORAGE_KEYS.CLIENTS, clientData); // Save clients
                 }
             });
 
+            // Handle Client Checkbox Change
             clientTableBody.addEventListener('change', (e) => {
-                if (e.target.type === 'checkbox') {
+                if (e.target.classList.contains('client-complete-checkbox')) {
                     const row = e.target.closest('tr');
                     const companyName = row.children[0].textContent;
                     const client = clientData.find(c => c.company === companyName);
                     if (client) {
                         client.complete = e.target.checked;
                         row.classList.toggle('completed', e.target.checked);
+                        filterAndRenderClients(); // Re-render to ensure filtering is still accurate
+                        saveData(STORAGE_KEYS.CLIENTS, clientData); // Save clients
                     }
                 }
             });
             
+            // Remove Client Button Click
             clientTableBody.addEventListener('click', (e) => {
                 if (e.target.classList.contains('remove-client-btn')) {
                     const row = e.target.closest('tr');
-                    const rowIndex = Array.from(clientTableBody.children).indexOf(row);
-                    lastRemovedClient = clientData.splice(rowIndex, 1)[0];
-                    filterAndRender();
-                    undoBtn.classList.remove('hidden');
+                    const companyName = row.children[0].textContent;
+                    const clientIndex = clientData.findIndex(c => c.company === companyName);
+                    
+                    if (clientIndex !== -1) {
+                        lastRemovedClient = clientData.splice(clientIndex, 1)[0]; // Remove and store
+                        filterAndRenderClients();
+                        undoBtn.classList.remove('hidden');
+                        saveData(STORAGE_KEYS.CLIENTS, clientData); // Save clients
+                    }
                 }
             });
 
+            // Undo Remove Client
             undoBtn.addEventListener('click', () => {
                 if (lastRemovedClient) {
-                    clientData.push(lastRemovedClient);
-                    filterAndRender();
+                    clientData.push(lastRemovedClient); // Add back
+                    filterAndRenderClients();
                     lastRemovedClient = null;
                     undoBtn.classList.add('hidden');
+                    saveData(STORAGE_KEYS.CLIENTS, clientData); // Save clients
                 }
             });
 
+            // Filter Clients Dropdown Change
             filterClientsSelect.addEventListener('change', (e) => {
                 currentFilter = e.target.value;
-                filterAndRender();
+                filterAndRenderClients();
             });
             
+            // Sortable Headers
             sortableHeaders.forEach(header => {
                 header.addEventListener('click', (e) => {
                     const sortKey = e.target.dataset.sortKey;
@@ -444,18 +501,21 @@
                     sortDirection[sortKey] = direction;
                     
                     clientData.sort((a, b) => {
-                        const aValue = a[sortKey].toLowerCase();
-                        const bValue = b[sortKey].toLowerCase();
+                        const aValue = String(a[sortKey]).toLowerCase(); // Ensure string comparison
+                        const bValue = String(b[sortKey]).toLowerCase();
                         if (aValue < bValue) return direction === 'asc' ? -1 : 1;
                         if (aValue > bValue) return direction === 'asc' ? 1 : -1;
                         return 0;
                     });
                     
-                    filterAndRender();
+                    filterAndRenderClients();
                 });
             });
 
-            filterAndRender();
+            // --- Initial Render ---
+            renderWeekContent(activeWeek); // Render the initially active week
+            renderDeadlineList(); // Load and display deadlines
+            filterAndRenderClients(); // Load and display clients
         });
     </script>
 </body>
