@@ -5,353 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Interactive Monthly Planner</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Firebase Libraries -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, getDoc, addDoc, setDoc, updateDoc, deleteDoc, onSnapshot, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-        
-        // --- Firebase Configuration and Initialization ---
-        // Global variables provided by the canvas environment. DO NOT change these names.
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-        const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
-        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
-
-        let db, auth, userId;
-
-        window.onload = async () => {
-            if (Object.keys(firebaseConfig).length > 0) {
-                const app = initializeApp(firebaseConfig);
-                db = getFirestore(app);
-                auth = getAuth(app);
-                
-                if (initialAuthToken) {
-                    await signInWithCustomToken(auth, initialAuthToken);
-                } else {
-                    await signInAnonymously(auth);
-                }
-
-                onAuthStateChanged(auth, async (user) => {
-                    if (user) {
-                        userId = user.uid;
-                        document.getElementById('user-id').textContent = userId;
-                        console.log('User authenticated. User ID:', userId);
-                        initPlanner();
-                        seedInitialClients();
-                    } else {
-                        console.log('No user is signed in.');
-                    }
-                });
-            } else {
-                console.error("Firebase config is missing. Please set it up in the code.");
-            }
-        };
-
-        const initPlanner = () => {
-             let lastRemovedClient = null;
-             let sortDirection = {};
-             let currentFilter = 'all';
-
-             const navigation = document.getElementById('week-navigation');
-             const contentContainer = document.getElementById('planner-content');
-             const deadlineForm = document.getElementById('add-deadline-form');
-             const deadlineList = document.getElementById('deadline-list');
-             const clientTableBody = document.getElementById('client-table-body');
-             const addClientBtn = document.getElementById('add-client-btn');
-             const undoBtn = document.getElementById('undo-client-btn');
-             const sortableHeaders = document.querySelectorAll('.sortable-header');
-             const filterClientsSelect = document.getElementById('filter-clients');
-
-             // Modal elements
-             const addClientModal = document.getElementById('add-client-modal');
-             const newClientForm = document.getElementById('new-client-form');
-             const newClientCompanyInput = document.getElementById('new-client-company');
-             const newClientServicesInput = document.getElementById('new-client-services');
-             const closeModalBtn = document.getElementById('close-modal-btn');
-             const cancelNewClientBtn = document.getElementById('cancel-new-client-btn');
-
-             // Placeholder for client data from Firestore
-             let clientData = [];
-             
-             // Initial planner data, this is not saved to the database as it is static content.
-             const plannerData = {
-                 1: {
-                     title: 'Content Creation Focus',
-                     tasks: {
-                         daily: ['Check CMA inbox for anything urgent.', 'Check follow up sheet, confirm meetings and book the boardroom for any meetings.', 'Get to RMS emails'],
-                         weekly: ['Keyword research for new blogs & Write Blogs. Write social media captions.', 'Put content into client folders and notify Stephanie with a dealine for the 20th.','Google Ads Report (Friday)'],
-                         monthly: ['Create and schedule content.', 'SEO optimisation for clients.', 'Update SEO sheets.']
-                     }
-                 },
-                 2: {
-                     title: 'SEO Optimization Focus',
-                     tasks: {
-                         daily: ['Check CMA inbox for anything urgent.', 'Check follow up sheet, confirm meetings and book the boardroom for any meetings.', 'Get to RMS emails'],
-                         weekly: ['On-Page SEO keywords. Meta Descriptions. Image Alt tags.','Google Ads Report (Friday)'],
-                         monthly: []
-                     }
-                 },
-                 3: {
-                     title: 'Content Review & Reporting Focus',
-                     tasks: {
-                         daily: ['Check CMA inbox for anything urgent.', 'Check follow up sheet, confirm meetings and book the boardroom for any meetings.', 'Get to RMS emails'],
-                         weekly: ['Send out SEO report to all clients (Wednesday).', 'Mail shots (Thursday).', 'Get content from Stephanie.','Google Ads Report (Friday)'],
-                         monthly: []
-                     }
-                 },
-                 4: {
-                     title: 'Content Scheduling Focus',
-                     tasks: {
-                         daily: ['Check CMA inbox for anything urgent.', 'Check follow up sheet, confirm meetings and book the boardroom for any meetings.', 'Get to RMS emails'],
-                         weekly: ['Schedule content for the coming month.', 'Brainstorm ideas.','Google Ads Report (Friday)'],
-                         monthly: []
-                     }
-                 }
-             };
-
-             // --- Real-time updates with Firestore ---
-             onSnapshot(collection(db, `artifacts/${appId}/users/${userId}/deadlines`), (snapshot) => {
-                 deadlineList.innerHTML = '';
-                 if (snapshot.empty) {
-                     const placeholder = document.createElement('li');
-                     placeholder.className = 'p-4 bg-gray-100 rounded-lg flex items-center justify-between';
-                     placeholder.innerHTML = `<div><span class="font-semibold text-gray-700">[Date]:</span><span class="text-gray-600"> [Project/Task Name] - [Client Name]</span></div>`;
-                     deadlineList.appendChild(placeholder);
-                 } else {
-                     snapshot.forEach((doc) => {
-                         const data = doc.data();
-                         const li = document.createElement('li');
-                         li.className = 'p-4 bg-gray-100 rounded-lg flex items-center justify-between';
-                         li.dataset.id = doc.id;
-                         li.innerHTML = `
-                             <div>
-                                 <span class="font-semibold text-gray-700">${new Date(data.date + 'T00:00:00').toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })}:</span>
-                                 <span class="text-gray-600"> ${data.task} - ${data.client}</span>
-                             </div>
-                             <button class="remove-deadline text-red-400 hover:text-red-600 font-bold text-xl">&times;</button>
-                         `;
-                         deadlineList.appendChild(li);
-                     });
-                 }
-             });
-
-             onSnapshot(collection(db, `artifacts/${appId}/users/${userId}/clients`), (snapshot) => {
-                 clientData = [];
-                 snapshot.forEach((doc) => {
-                     clientData.push({ ...doc.data(), id: doc.id });
-                 });
-                 filterAndRender();
-             });
-
-             // --- Core Planner Logic ---
-             const renderWeekContent = (week) => {
-                 const weekData = plannerData[week];
-                 if (!weekData) return;
-
-                 let monthlyTasksHtml = '';
-                 if (weekData.tasks.monthly.length > 0) {
-                     monthlyTasksHtml = `
-                         <div class="task-card bg-white p-6 rounded-xl shadow-sm">
-                             <h3 class="text-xl font-semibold text-gray-800 mb-3">Monthly Tasks</h3>
-                             <ul class="text-gray-600">${weekData.tasks.monthly.map(task => `<li>${task}</li>`).join('')}</ul>
-                         </div>
-                     `;
-                 }
-
-                 contentContainer.innerHTML = `
-                     <section id="week-${week}-content" class="bg-gray-100 p-6 rounded-xl">
-                          <h2 class="text-2xl font-bold text-gray-800 mb-4 text-center">${weekData.title}</h2>
-                          <div class="grid grid-cols-1 md:grid-cols-2 ${monthlyTasksHtml ? 'lg:grid-cols-3' : ''} gap-6">
-                              <div class="task-card bg-white p-6 rounded-xl shadow-sm">
-                                  <h3 class="text-xl font-semibold text-gray-800 mb-3">Daily Tasks</h3>
-                                  <ul class="text-gray-600">${weekData.tasks.daily.map(task => `<li>${task}</li>`).join('')}</ul>
-                              </div>
-                              <div class="task-card bg-white p-6 rounded-xl shadow-sm">
-                                  <h3 class="text-xl font-semibold text-gray-800 mb-3">Weekly Tasks</h3>
-                                  <ul class="text-gray-600">${weekData.tasks.weekly.map(task => `<li>${task}</li>`).join('')}</ul>
-                              </div>
-                              ${monthlyTasksHtml}
-                          </div>
-                     </section>
-                 `;
-             };
-
-             const renderClientTable = (data) => {
-                 clientTableBody.innerHTML = '';
-                 data.forEach(client => {
-                     const row = document.createElement('tr');
-                     row.className = `border-b border-gray-200 ${client.complete ? 'completed' : ''}`;
-                     row.innerHTML = `
-                         <td class="p-4 py-3 align-top">${client.company}</td>
-                         <td class="p-4 py-3 align-top">${client.services}</td>
-                         <td class="p-4 py-3 align-top text-center">
-                             <input type="checkbox" data-id="${client.id}" class="w-4 h-4 text-[#E42642] border-gray-300 rounded-sm focus:ring-[#E42642] bg-gray-100" ${client.complete ? 'checked' : ''}>
-                         </td>
-                         <td class="p-4 py-3 align-top text-center">
-                             <button class="remove-client-btn text-red-400 hover:text-red-600 font-bold text-xl" data-id="${client.id}">&times;</button>
-                         </td>
-                     `;
-                     clientTableBody.appendChild(row);
-                 });
-             };
-             
-             const filterAndRender = () => {
-                 let filteredData = clientData;
-                 if (currentFilter === 'complete') {
-                     filteredData = clientData.filter(client => client.complete);
-                 } else if (currentFilter === 'incomplete') {
-                     filteredData = clientData.filter(client => !client.complete);
-                 }
-                 renderClientTable(filteredData);
-             };
-
-             // --- Event Listeners and Firestore Interaction ---
-             navigation.addEventListener('click', (e) => {
-                 if (e.target.tagName === 'BUTTON') {
-                     const week = e.target.dataset.week;
-                     
-                     document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
-                     e.target.classList.add('active');
-                     
-                     renderWeekContent(week);
-                 }
-             });
-
-             deadlineForm.addEventListener('submit', async (e) => {
-                 e.preventDefault();
-                 const dateInput = document.getElementById('deadline-date');
-                 const taskInput = document.getElementById('deadline-task');
-                 const clientInput = document.getElementById('deadline-client');
-
-                 const newDeadline = {
-                     date: dateInput.value,
-                     task: taskInput.value.trim(),
-                     client: clientInput.value.trim()
-                 };
-                 
-                 if (newDeadline.date && newDeadline.task && newDeadline.client) {
-                     await addDoc(collection(db, `artifacts/${appId}/users/${userId}/deadlines`), newDeadline);
-                     dateInput.value = '';
-                     taskInput.value = '';
-                     clientInput.value = '';
-                 }
-             });
-
-             deadlineList.addEventListener('click', async (e) => {
-                 if (e.target.classList.contains('remove-deadline')) {
-                     const deadlineId = e.target.parentElement.dataset.id;
-                     await deleteDoc(doc(db, `artifacts/${appId}/users/${userId}/deadlines`, deadlineId));
-                 }
-             });
-             
-             renderWeekContent(1);
-
-             addClientBtn.addEventListener('click', () => {
-                 addClientModal.classList.remove('hidden');
-                 newClientCompanyInput.value = '';
-                 newClientServicesInput.value = '';
-             });
-
-             closeModalBtn.addEventListener('click', () => {
-                 addClientModal.classList.add('hidden');
-             });
-
-             cancelNewClientBtn.addEventListener('click', () => {
-                 addClientModal.classList.add('hidden');
-             });
-
-             newClientForm.addEventListener('submit', async (e) => {
-                 e.preventDefault();
-                 const newClient = {
-                     company: newClientCompanyInput.value.trim(),
-                     services: newClientServicesInput.value.trim(),
-                     complete: false
-                 };
-                 if (newClient.company && newClient.services) {
-                     await addDoc(collection(db, `artifacts/${appId}/users/${userId}/clients`), newClient);
-                     addClientModal.classList.add('hidden');
-                 }
-             });
-
-             clientTableBody.addEventListener('change', async (e) => {
-                 if (e.target.type === 'checkbox') {
-                     const clientId = e.target.dataset.id;
-                     const isComplete = e.target.checked;
-                     await updateDoc(doc(db, `artifacts/${appId}/users/${userId}/clients`, clientId), { complete: isComplete });
-                 }
-             });
-             
-             clientTableBody.addEventListener('click', async (e) => {
-                 if (e.target.classList.contains('remove-client-btn')) {
-                     const clientId = e.target.dataset.id;
-                     const clientToRemove = clientData.find(c => c.id === clientId);
-                     if (clientToRemove) {
-                         lastRemovedClient = clientToRemove;
-                         await deleteDoc(doc(db, `artifacts/${appId}/users/${userId}/clients`, clientId));
-                         undoBtn.classList.remove('hidden');
-                     }
-                 }
-             });
-
-             undoBtn.addEventListener('click', async () => {
-                 if (lastRemovedClient) {
-                     await setDoc(doc(db, `artifacts/${appId}/users/${userId}/clients`, lastRemovedClient.id), {
-                         company: lastRemovedClient.company,
-                         services: lastRemovedClient.services,
-                         complete: lastRemovedClient.complete
-                     });
-                     lastRemovedClient = null;
-                     undoBtn.classList.add('hidden');
-                 }
-             });
-
-             filterClientsSelect.addEventListener('change', (e) => {
-                 currentFilter = e.target.value;
-                 filterAndRender();
-             });
-             
-             sortableHeaders.forEach(header => {
-                 header.addEventListener('click', (e) => {
-                     const sortKey = e.target.dataset.sortKey;
-                     const direction = sortDirection[sortKey] === 'asc' ? 'desc' : 'asc';
-                     sortDirection[sortKey] = direction;
-                     
-                     clientData.sort((a, b) => {
-                         const aValue = a[sortKey].toLowerCase();
-                         const bValue = b[sortKey].toLowerCase();
-                         if (aValue < bValue) return direction === 'asc' ? -1 : 1;
-                         if (aValue > bValue) return direction === 'asc' ? 1 : -1;
-                         return 0;
-                     });
-                     
-                     filterAndRender();
-                 });
-             });
-        }
-        
-        async function seedInitialClients() {
-            const initialClients = [
-                { company: 'Prominent Roofing', services: 'Google Ads, 1 SEO blog, 4 posts', complete: false },
-                { company: 'CFO Connect', services: 'Google Ads, 1 SEO blog', complete: false },
-                { company: 'The Green Zone', services: 'Google Ads, 1 SEO blog, 8 posts', complete: false },
-                { company: 'Atzaro', services: 'Google Ads, 4 SEO blogs, 16 posts', complete: false },
-                { company: 'Landy Logic', services: 'Google Ads, 4 posts', complete: false },
-                { company: 'Absolute Ablutions', services: 'Google Ads, 2 SEO blogs', complete: false }
-            ];
-
-            const clientCollectionRef = collection(db, `artifacts/${appId}/users/${userId}/clients`);
-            const clientSnapshot = await getDocs(clientCollectionRef);
-
-            if (clientSnapshot.empty) {
-                console.log("Clients collection is empty. Seeding initial data.");
-                for (const client of initialClients) {
-                    await addDoc(clientCollectionRef, client);
-                }
-            } else {
-                console.log("Clients collection is not empty. Skipping initial data seed.");
-            }
-        }
-    </script>
+    <!-- Chosen Palette: Warm Neutrals -->
+    <!-- Application Structure Plan: The SPA is designed as an interactive weekly planner. A top-level tabbed navigation allows the user to switch between the four weeks, dynamically displaying the relevant tasks for that period. This structure was chosen over a static table to improve focus and reduce information overload. Tasks are grouped by frequency (Daily, Weekly, Monthly) into cards for clarity. A separate, dynamic section for deadlines allows users to not only view but also add new deadlines, transforming the static report into a usable tool. -->
+    <!-- Visualization & Content Choices: Report Info: Weekly tasks (Content Creation, SEO, etc.). Goal: Organize. Presentation: Interactive cards displayed based on weekly navigation. Interaction: Clicking week buttons updates the view. Justification: Focuses user on one week at a time. Method: HTML/CSS/JS. | Report Info: Deadlines. Goal: Inform & Manage. Presentation: A list and an input form. Interaction: User can add new items to the list via the form. Justification: Adds interactivity and utility. Method: HTML/JS Form Handling. | No quantitative data exists in the report, so no charts are used. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
         body {
@@ -392,6 +49,7 @@
             user-select: none;
         }
         .modal {
+            display: none;
             position: fixed;
             z-index: 1000;
             left: 0;
@@ -403,9 +61,6 @@
             display: flex;
             align-items: center;
             justify-content: center;
-        }
-        .modal.hidden {
-            display: none;
         }
         .modal-content {
             background-color: #fefefe;
@@ -437,8 +92,6 @@
         </header>
 
         <main>
-            <div class="mb-4 text-xs text-center text-gray-400">Your User ID: <span id="user-id"></span></div>
-
             <nav class="flex justify-center items-center bg-white rounded-xl shadow-sm p-2 mb-8" id="week-navigation">
                 <button data-week="1" class="nav-btn w-1/4 py-3 px-2 text-center rounded-lg text-gray-700 active">Week 1</button>
                 <button data-week="2" class="nav-btn w-1/4 py-3 px-2 text-center rounded-lg text-gray-700">Week 2</button>
@@ -536,6 +189,274 @@
             </form>
         </div>
     </div>
-</body>
 
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            let lastRemovedClient = null;
+            let sortDirection = {};
+            let currentFilter = 'all';
+
+            const plannerData = {
+                1: {
+                    title: 'Content Creation Focus',
+                    tasks: {
+                        daily: ['Check CMA inbox for anything urgent.', 'Check follow up sheet, confirm meetings and book the boardroom for any meetings.', 'Get to RMS emails'],
+                        weekly: ['Keyword research for new blogs & Write Blogs. Write social media captions.', 'Put content into client folders and notify Stephanie with a dealine for the 20th.','Google Ads Report (Friday)'],
+                        monthly: ['Create and schedule content.', 'SEO optimisation for clients.', 'Update SEO sheets.']
+                    }
+                },
+                2: {
+                    title: 'SEO Optimization Focus',
+                    tasks: {
+                        daily: ['Check CMA inbox for anything urgent.', 'Check follow up sheet, confirm meetings and book the boardroom for any meetings.', 'Get to RMS emails'],
+                        weekly: ['On-Page SEO keywords. Meta Descriptions. Image Alt tags.','Google Ads Report (Friday)'],
+                        monthly: []
+                    }
+                },
+                3: {
+                    title: 'Content Review & Reporting Focus',
+                    tasks: {
+                        daily: ['Check CMA inbox for anything urgent.', 'Check follow up sheet, confirm meetings and book the boardroom for any meetings.', 'Get to RMS emails'],
+                        weekly: ['Send out SEO report to all clients (Wednesday).', 'Mail shots (Thursday).', 'Get content from Stephanie.','Google Ads Report (Friday)'],
+                        monthly: []
+                    }
+                },
+                4: {
+                    title: 'Content Scheduling Focus',
+                    tasks: {
+                        daily: ['Check CMA inbox for anything urgent.', 'Check follow up sheet, confirm meetings and book the boardroom for any meetings.', 'Get to RMS emails'],
+                        weekly: ['Schedule content for the coming month.', 'Brainstorm ideas.','Google Ads Report (Friday)'],
+                        monthly: []
+                    }
+                }
+            };
+
+            const navigation = document.getElementById('week-navigation');
+            const contentContainer = document.getElementById('planner-content');
+            const deadlineForm = document.getElementById('add-deadline-form');
+            const deadlineList = document.getElementById('deadline-list');
+            const clientTableBody = document.getElementById('client-table-body');
+            const addClientBtn = document.getElementById('add-client-btn');
+            const undoBtn = document.getElementById('undo-client-btn');
+            const sortableHeaders = document.querySelectorAll('.sortable-header');
+            const filterClientsSelect = document.getElementById('filter-clients');
+
+            // Modal elements
+            const addClientModal = document.getElementById('add-client-modal');
+            const newClientForm = document.getElementById('new-client-form');
+            const newClientCompanyInput = document.getElementById('new-client-company');
+            const newClientServicesInput = document.getElementById('new-client-services');
+            const closeModalBtn = document.getElementById('close-modal-btn');
+            const cancelNewClientBtn = document.getElementById('cancel-new-client-btn');
+
+
+            const renderWeekContent = (week) => {
+                const weekData = plannerData[week];
+                if (!weekData) return;
+
+                let monthlyTasksHtml = '';
+                if (weekData.tasks.monthly.length > 0) {
+                    monthlyTasksHtml = `
+                        <div class="task-card bg-white p-6 rounded-xl shadow-sm">
+                            <h3 class="text-xl font-semibold text-gray-800 mb-3">Monthly Tasks</h3>
+                            <ul class="text-gray-600">${weekData.tasks.monthly.map(task => `<li>${task}</li>`).join('')}</ul>
+                        </div>
+                    `;
+                }
+
+                contentContainer.innerHTML = `
+                    <section id="week-${week}-content" class="bg-gray-100 p-6 rounded-xl">
+                         <h2 class="text-2xl font-bold text-gray-800 mb-4 text-center">${weekData.title}</h2>
+                         <div class="grid grid-cols-1 md:grid-cols-2 ${monthlyTasksHtml ? 'lg:grid-cols-3' : ''} gap-6">
+                             <div class="task-card bg-white p-6 rounded-xl shadow-sm">
+                                 <h3 class="text-xl font-semibold text-gray-800 mb-3">Daily Tasks</h3>
+                                 <ul class="text-gray-600">${weekData.tasks.daily.map(task => `<li>${task}</li>`).join('')}</ul>
+                             </div>
+                             <div class="task-card bg-white p-6 rounded-xl shadow-sm">
+                                 <h3 class="text-xl font-semibold text-gray-800 mb-3">Weekly Tasks</h3>
+                                 <ul class="text-gray-600">${weekData.tasks.weekly.map(task => `<li>${task}</li>`).join('')}</ul>
+                             </div>
+                             ${monthlyTasksHtml}
+                         </div>
+                    </section>
+                `;
+            };
+
+            navigation.addEventListener('click', (e) => {
+                if (e.target.tagName === 'BUTTON') {
+                    const week = e.target.dataset.week;
+                    
+                    document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+                    e.target.classList.add('active');
+                    
+                    renderWeekContent(week);
+                }
+            });
+
+            deadlineForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+
+                const dateInput = document.getElementById('deadline-date');
+                const taskInput = document.getElementById('deadline-task');
+                const clientInput = document.getElementById('deadline-client');
+
+                const date = dateInput.value;
+                const task = taskInput.value.trim();
+                const client = clientInput.value.trim();
+                
+                if (date && task && client) {
+                    const li = document.createElement('li');
+                    li.className = 'p-4 bg-gray-100 rounded-lg flex items-center justify-between';
+                    li.innerHTML = `
+                        <div>
+                           <span class="font-semibold text-gray-700">${new Date(date + 'T00:00:00').toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })}:</span>
+                           <span class="text-gray-600"> ${task} - ${client}</span>
+                        </div>
+                        <button class="remove-deadline text-red-400 hover:text-red-600 font-bold text-xl">&times;</button>
+                    `;
+                    deadlineList.appendChild(li);
+
+                    if(deadlineList.children.length === 2 && deadlineList.firstElementChild.textContent.includes('[Date]')) {
+                         deadlineList.firstElementChild.remove();
+                    }
+
+                    dateInput.value = '';
+                    taskInput.value = '';
+                    clientInput.value = '';
+                }
+            });
+
+            deadlineList.addEventListener('click', (e) => {
+                if (e.target.classList.contains('remove-deadline')) {
+                    e.target.parentElement.remove();
+                }
+            });
+            
+            renderWeekContent(1);
+
+            const clientData = [
+                { company: 'Prominent Roofing', services: 'Google Ads, 1 SEO blog, 4 posts', complete: false },
+                { company: 'CFO Connect', services: 'Google Ads, 1 SEO blog', complete: false },
+                { company: 'The Green Zone', services: 'Google Ads, 1 SEO blog, 8 posts', complete: false },
+                { company: 'Atzaro', services: 'Google Ads, 4 SEO blogs, 16 posts', complete: false },
+                { company: 'Landy Logic', services: 'Google Ads, 4 posts', complete: false },
+                { company: 'Absolute Ablutions', services: 'Google Ads, 2 SEO blogs', complete: false }
+            ];
+
+            const renderClientTable = (data) => {
+                clientTableBody.innerHTML = '';
+                data.forEach(client => {
+                    const row = document.createElement('tr');
+                    row.className = `border-b border-gray-200 ${client.complete ? 'completed' : ''}`;
+                    row.innerHTML = `
+                        <td class="p-4 py-3 align-top">${client.company}</td>
+                        <td class="p-4 py-3 align-top">${client.services}</td>
+                        <td class="p-4 py-3 align-top text-center">
+                            <input type="checkbox" class="w-4 h-4 text-[#E42642] border-gray-300 rounded-sm focus:ring-[#E42642] bg-gray-100" ${client.complete ? 'checked' : ''}>
+                        </td>
+                        <td class="p-4 py-3 align-top text-center">
+                            <button class="remove-client-btn text-red-400 hover:text-red-600 font-bold text-xl">&times;</button>
+                        </td>
+                    `;
+                    clientTableBody.appendChild(row);
+                });
+            };
+            
+            const filterAndRender = () => {
+                let filteredData = clientData;
+                if (currentFilter === 'complete') {
+                    filteredData = clientData.filter(client => client.complete);
+                } else if (currentFilter === 'incomplete') {
+                    filteredData = clientData.filter(client => !client.complete);
+                }
+                renderClientTable(filteredData);
+            };
+
+            addClientBtn.addEventListener('click', () => {
+                addClientModal.classList.remove('hidden');
+                newClientCompanyInput.value = '';
+                newClientServicesInput.value = '';
+            });
+
+            closeModalBtn.addEventListener('click', () => {
+                addClientModal.classList.add('hidden');
+            });
+
+            cancelNewClientBtn.addEventListener('click', () => {
+                addClientModal.classList.add('hidden');
+            });
+
+            newClientForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const newClient = {
+                    company: newClientCompanyInput.value.trim(),
+                    services: newClientServicesInput.value.trim(),
+                    complete: false
+                };
+                if (newClient.company && newClient.services) {
+                    clientData.push(newClient);
+                    filterAndRender();
+                    addClientModal.classList.add('hidden');
+                }
+            });
+
+            clientTableBody.addEventListener('change', (e) => {
+                if (e.target.type === 'checkbox') {
+                    const row = e.target.closest('tr');
+                    const companyName = row.children[0].textContent;
+                    const client = clientData.find(c => c.company === companyName);
+                    if (client) {
+                        client.complete = e.target.checked;
+                        row.classList.toggle('completed', e.target.checked);
+                    }
+                }
+            });
+            
+            clientTableBody.addEventListener('click', (e) => {
+                if (e.target.classList.contains('remove-client-btn')) {
+                    const row = e.target.closest('tr');
+                    const rowIndex = Array.from(clientTableBody.children).indexOf(row);
+                    lastRemovedClient = clientData.splice(rowIndex, 1)[0];
+                    filterAndRender();
+                    undoBtn.classList.remove('hidden');
+                }
+            });
+
+            undoBtn.addEventListener('click', () => {
+                if (lastRemovedClient) {
+                    clientData.push(lastRemovedClient);
+                    filterAndRender();
+                    lastRemovedClient = null;
+                    undoBtn.classList.add('hidden');
+                }
+            });
+
+            filterClientsSelect.addEventListener('change', (e) => {
+                currentFilter = e.target.value;
+                filterAndRender();
+            });
+            
+            sortableHeaders.forEach(header => {
+                header.addEventListener('click', (e) => {
+                    const sortKey = e.target.dataset.sortKey;
+                    const direction = sortDirection[sortKey] === 'asc' ? 'desc' : 'asc';
+                    sortDirection[sortKey] = direction;
+                    
+                    clientData.sort((a, b) => {
+                        const aValue = a[sortKey].toLowerCase();
+                        const bValue = b[sortKey].toLowerCase();
+                        if (aValue < bValue) return direction === 'asc' ? -1 : 1;
+                        if (aValue > bValue) return direction === 'asc' ? 1 : -1;
+                        return 0;
+                    });
+                    
+                    filterAndRender();
+                });
+            });
+
+            filterAndRender();
+        });
+    </script>
+</body>
 </html>
