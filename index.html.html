@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Monthly Planner</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chosen Palette: Warm Neutrals -->
+    <!-- Application Structure Plan: The SPA is designed as an interactive weekly planner. A top-level tabbed navigation allows the user to switch between the four weeks, dynamically displaying the relevant tasks for that period. This structure was chosen over a static table to improve focus and reduce information overload. Tasks are grouped by frequency (Daily, Weekly, Monthly) into cards for clarity. A separate, dynamic section for deadlines allows users to not only view but also add new deadlines, transforming the static report into a usable tool. -->
+    <!-- Visualization & Content Choices: Report Info: Weekly tasks (Content Creation, SEO, etc.). Goal: Organize. Presentation: Interactive cards displayed based on weekly navigation. Interaction: Clicking week buttons updates the view. Justification: Focuses user on one week at a time. Method: HTML/CSS/JS. | Report Info: Deadlines. Goal: Inform & Manage. Presentation: A list and an input form. Interaction: User can add new items to the list via the form. Justification: Adds interactivity and utility. Method: HTML/JS Form Handling. | No quantitative data exists in the report, so no charts are used. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #F5F5F5;
+            color: #333333;
+        }
+        .nav-btn {
+            transition: all 0.3s ease;
+        }
+        .nav-btn.active {
+            background-color: #E42642;
+            color: white;
+            font-weight: 600;
+        }
+        .task-card ul {
+            list-style-position: inside;
+        }
+        .task-card ul li {
+            position: relative;
+            padding-left: 1.5rem;
+            margin-bottom: 0.5rem;
+        }
+        .task-card ul li::before {
+            content: '•';
+            position: absolute;
+            left: 0.25rem;
+            color: #E42642;
+            font-weight: bold;
+            display: inline-block;
+        }
+        .completed {
+            text-decoration: line-through;
+            color: #B5B5B5;
+        }
+        .sortable-header {
+            cursor: pointer;
+            user-select: none;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-content {
+            background-color: #fefefe;
+            padding: 24px;
+            border-radius: 0.75rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            max-width: 500px;
+            width: 90%;
+        }
+        .close-btn {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+        }
+        .close-btn:hover,
+        .close-btn:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body class="antialiased bg-gray-100 text-gray-900">
+    <div class="container mx-auto p-4 sm:p-6 md:p-8 max-w-7xl">
+        <header class="text-center mb-8">
+            <h1 class="text-4xl font-bold text-gray-800">Monthly Work Planner</h1>
+            <p class="text-lg text-gray-600 mt-2">A dynamic and interactive schedule to keep you organized.</p>
+        </header>
+
+        <main>
+            <nav class="flex justify-center items-center bg-white rounded-xl shadow-sm p-2 mb-8" id="week-navigation">
+                <button data-week="1" class="nav-btn w-1/4 py-3 px-2 text-center rounded-lg text-gray-700 active">Week 1</button>
+                <button data-week="2" class="nav-btn w-1/4 py-3 px-2 text-center rounded-lg text-gray-700">Week 2</button>
+                <button data-week="3" class="nav-btn w-1/4 py-3 px-2 text-center rounded-lg text-gray-700">Week 3</button>
+                <button data-week="4" class="nav-btn w-1/4 py-3 px-2 text-center rounded-lg text-gray-700">Week 4</button>
+            </nav>
+
+            <div id="planner-content">
+                <!-- Content will be dynamically inserted here -->
+            </div>
+            
+            <section id="deadlines-section" class="mt-10 bg-white p-6 rounded-xl shadow-sm">
+                 <h2 class="text-2xl font-bold text-gray-800 mb-4 border-b-2 border-gray-200 pb-2">Upcoming Deadlines</h2>
+                 <p class="text-gray-600 mb-6">Use this section to track specific deadlines for projects and tasks. Add new deadlines using the form below.</p>
+                 <ul id="deadline-list" class="space-y-3 mb-8">
+                    <li class="p-4 bg-gray-100 rounded-lg flex items-center justify-between">
+                        <div>
+                           <span class="font-semibold text-gray-700">[Date]:</span>
+                           <span class="text-gray-600"> [Project/Task Name] - [Client Name]</span>
+                        </div>
+                    </li>
+                 </ul>
+                 <div class="mt-6">
+                     <h3 class="text-xl font-semibold text-gray-800 mb-3">Add a New Deadline</h3>
+                     <form id="add-deadline-form" class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+                         <div class="md:col-span-1">
+                             <label for="deadline-date" class="block text-sm font-medium text-gray-700">Date</label>
+                             <input type="date" id="deadline-date" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 p-2 bg-white text-gray-900">
+                         </div>
+                         <div class="md:col-span-2">
+                             <label for="deadline-task" class="block text-sm font-medium text-gray-700">Project/Task Name</label>
+                             <input type="text" id="deadline-task" placeholder="e.g., Finalize Q3 Report" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 p-2 bg-white text-gray-900">
+                         </div>
+                          <div class="md:col-span-1">
+                             <label for="deadline-client" class="block text-sm font-medium text-gray-700">Client</label>
+                             <input type="text" id="deadline-client" placeholder="e.g., Client Inc." required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 p-2 bg-white text-gray-900">
+                         </div>
+                         <button type="submit" class="w-full md:w-auto md:col-start-4 bg-[#E42642] text-white font-semibold py-2 px-6 rounded-lg hover:bg-opacity-90 transition-colors">Add Deadline</button>
+                     </form>
+                 </div>
+            </section>
+            <section id="clients-section" class="mt-10 bg-white p-6 rounded-xl shadow-sm">
+                <h2 class="text-2xl font-bold text-gray-800 mb-4 border-b-2 border-gray-200 pb-2">Active Clients</h2>
+                <div class="flex justify-between items-center mb-4">
+                    <div class="flex items-center gap-2">
+                         <label for="filter-clients" class="text-sm font-medium text-gray-700">Filter by:</label>
+                         <select id="filter-clients" class="bg-white text-gray-900 rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 p-2 text-sm">
+                            <option value="all">All</option>
+                            <option value="incomplete">Incomplete</option>
+                            <option value="complete">Complete</option>
+                         </select>
+                    </div>
+                    <div class="flex justify-end gap-2">
+                        <button id="undo-client-btn" class="bg-gray-200 text-gray-600 font-semibold py-2 px-6 rounded-lg hover:bg-gray-300 transition-colors hidden">Undo Remove</button>
+                        <button id="add-client-btn" class="bg-[#E42642] text-white font-semibold py-2 px-6 rounded-lg hover:bg-opacity-90 transition-colors">Add New Client</button>
+                    </div>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead>
+                            <tr>
+                                <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider sortable-header" data-sort-key="company">Company</th>
+                                <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider sortable-header" data-sort-key="services">Services</th>
+                                <th class="px-4 py-3 text-center text-sm font-semibold text-gray-700 uppercase tracking-wider">Complete</th>
+                                <th class="px-4 py-3 text-center text-sm font-semibold text-gray-700 uppercase tracking-wider">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="client-table-body" class="bg-white divide-y divide-gray-200">
+                            <!-- Client rows will be dynamically inserted here -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- The Confirmation Modal -->
+    <div id="add-client-modal" class="modal hidden">
+        <div class="modal-content bg-white p-6 rounded-xl shadow-lg">
+            <span id="close-modal-btn" class="close-btn">&times;</span>
+            <h3 class="text-xl font-semibold text-gray-800 mb-4">Add New Client</h3>
+            <form id="new-client-form" class="space-y-4">
+                <div>
+                    <label for="new-client-company" class="block text-sm font-medium text-gray-700">Company</label>
+                    <input type="text" id="new-client-company" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 bg-white text-gray-900">
+                </div>
+                <div>
+                    <label for="new-client-services" class="block text-sm font-medium text-gray-700">Services</label>
+                    <input type="text" id="new-client-services" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 bg-white text-gray-900">
+                </div>
+                <div class="flex justify-end gap-2 mt-4">
+                    <button type="button" id="cancel-new-client-btn" class="bg-gray-200 text-gray-800 font-semibold py-2 px-6 rounded-lg hover:bg-gray-300 transition-colors">Cancel</button>
+                    <button type="submit" id="confirm-new-client-btn" class="bg-[#E42642] text-white font-semibold py-2 px-6 rounded-lg hover:bg-opacity-90 transition-colors">Confirm</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            let lastRemovedClient = null;
+            let sortDirection = {};
+            let currentFilter = 'all';
+
+            const plannerData = {
+                1: {
+                    title: 'Content Creation Focus',
+                    tasks: {
+                        daily: ['Check CMA inbox for anything urgent.', 'Check follow up sheet, confirm meetings and book the boardroom for any meetings.', 'Get to RMS emails'],
+                        weekly: ['Keyword research for new blogs & Write Blogs. Write social media captions.', 'Put content into client folders and notify Stephanie with a dealine for the 20th.','Google Ads Report (Friday)'],
+                        monthly: ['Create and schedule content.', 'SEO optimisation for clients.', 'Update SEO sheets.']
+                    }
+                },
+                2: {
+                    title: 'SEO Optimization Focus',
+                    tasks: {
+                        daily: ['Check CMA inbox for anything urgent.', 'Check follow up sheet, confirm meetings and book the boardroom for any meetings.', 'Get to RMS emails'],
+                        weekly: ['On-Page SEO keywords. Meta Descriptions. Image Alt tags.','Google Ads Report (Friday)'],
+                        monthly: []
+                    }
+                },
+                3: {
+                    title: 'Content Review & Reporting Focus',
+                    tasks: {
+                        daily: ['Check CMA inbox for anything urgent.', 'Check follow up sheet, confirm meetings and book the boardroom for any meetings.', 'Get to RMS emails'],
+                        weekly: ['Send out SEO report to all clients (Wednesday).', 'Mail shots (Thursday).', 'Get content from Stephanie.','Google Ads Report (Friday)'],
+                        monthly: []
+                    }
+                },
+                4: {
+                    title: 'Content Scheduling Focus',
+                    tasks: {
+                        daily: ['Check CMA inbox for anything urgent.', 'Check follow up sheet, confirm meetings and book the boardroom for any meetings.', 'Get to RMS emails'],
+                        weekly: ['Schedule content for the coming month.', 'Brainstorm ideas.','Google Ads Report (Friday)'],
+                        monthly: []
+                    }
+                }
+            };
+
+            const navigation = document.getElementById('week-navigation');
+            const contentContainer = document.getElementById('planner-content');
+            const deadlineForm = document.getElementById('add-deadline-form');
+            const deadlineList = document.getElementById('deadline-list');
+            const clientTableBody = document.getElementById('client-table-body');
+            const addClientBtn = document.getElementById('add-client-btn');
+            const undoBtn = document.getElementById('undo-client-btn');
+            const sortableHeaders = document.querySelectorAll('.sortable-header');
+            const filterClientsSelect = document.getElementById('filter-clients');
+
+            // Modal elements
+            const addClientModal = document.getElementById('add-client-modal');
+            const newClientForm = document.getElementById('new-client-form');
+            const newClientCompanyInput = document.getElementById('new-client-company');
+            const newClientServicesInput = document.getElementById('new-client-services');
+            const closeModalBtn = document.getElementById('close-modal-btn');
+            const cancelNewClientBtn = document.getElementById('cancel-new-client-btn');
+
+
+            const renderWeekContent = (week) => {
+                const weekData = plannerData[week];
+                if (!weekData) return;
+
+                let monthlyTasksHtml = '';
+                if (weekData.tasks.monthly.length > 0) {
+                    monthlyTasksHtml = `
+                        <div class="task-card bg-white p-6 rounded-xl shadow-sm">
+                            <h3 class="text-xl font-semibold text-gray-800 mb-3">Monthly Tasks</h3>
+                            <ul class="text-gray-600">${weekData.tasks.monthly.map(task => `<li>${task}</li>`).join('')}</ul>
+                        </div>
+                    `;
+                }
+
+                contentContainer.innerHTML = `
+                    <section id="week-${week}-content" class="bg-gray-100 p-6 rounded-xl">
+                         <h2 class="text-2xl font-bold text-gray-800 mb-4 text-center">${weekData.title}</h2>
+                         <div class="grid grid-cols-1 md:grid-cols-2 ${monthlyTasksHtml ? 'lg:grid-cols-3' : ''} gap-6">
+                             <div class="task-card bg-white p-6 rounded-xl shadow-sm">
+                                 <h3 class="text-xl font-semibold text-gray-800 mb-3">Daily Tasks</h3>
+                                 <ul class="text-gray-600">${weekData.tasks.daily.map(task => `<li>${task}</li>`).join('')}</ul>
+                             </div>
+                             <div class="task-card bg-white p-6 rounded-xl shadow-sm">
+                                 <h3 class="text-xl font-semibold text-gray-800 mb-3">Weekly Tasks</h3>
+                                 <ul class="text-gray-600">${weekData.tasks.weekly.map(task => `<li>${task}</li>`).join('')}</ul>
+                             </div>
+                             ${monthlyTasksHtml}
+                         </div>
+                    </section>
+                `;
+            };
+
+            navigation.addEventListener('click', (e) => {
+                if (e.target.tagName === 'BUTTON') {
+                    const week = e.target.dataset.week;
+                    
+                    document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+                    e.target.classList.add('active');
+                    
+                    renderWeekContent(week);
+                }
+            });
+
+            deadlineForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+
+                const dateInput = document.getElementById('deadline-date');
+                const taskInput = document.getElementById('deadline-task');
+                const clientInput = document.getElementById('deadline-client');
+
+                const date = dateInput.value;
+                const task = taskInput.value.trim();
+                const client = clientInput.value.trim();
+                
+                if (date && task && client) {
+                    const li = document.createElement('li');
+                    li.className = 'p-4 bg-gray-100 rounded-lg flex items-center justify-between';
+                    li.innerHTML = `
+                        <div>
+                           <span class="font-semibold text-gray-700">${new Date(date + 'T00:00:00').toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })}:</span>
+                           <span class="text-gray-600"> ${task} - ${client}</span>
+                        </div>
+                        <button class="remove-deadline text-red-400 hover:text-red-600 font-bold text-xl">&times;</button>
+                    `;
+                    deadlineList.appendChild(li);
+
+                    if(deadlineList.children.length === 2 && deadlineList.firstElementChild.textContent.includes('[Date]')) {
+                         deadlineList.firstElementChild.remove();
+                    }
+
+                    dateInput.value = '';
+                    taskInput.value = '';
+                    clientInput.value = '';
+                }
+            });
+
+            deadlineList.addEventListener('click', (e) => {
+                if (e.target.classList.contains('remove-deadline')) {
+                    e.target.parentElement.remove();
+                }
+            });
+            
+            renderWeekContent(1);
+
+            const clientData = [
+                { company: 'Prominent Roofing', services: 'Google Ads, 1 SEO blog, 4 posts', complete: false },
+                { company: 'CFO Connect', services: 'Google Ads, 1 SEO blog', complete: false },
+                { company: 'The Green Zone', services: 'Google Ads, 1 SEO blog, 8 posts', complete: false },
+                { company: 'Atzaro', services: 'Google Ads, 4 SEO blogs, 16 posts', complete: false },
+                { company: 'Landy Logic', services: 'Google Ads, 4 posts', complete: false },
+                { company: 'Absolute Ablutions', services: 'Google Ads, 2 SEO blogs', complete: false }
+            ];
+
+            const renderClientTable = (data) => {
+                clientTableBody.innerHTML = '';
+                data.forEach(client => {
+                    const row = document.createElement('tr');
+                    row.className = `border-b border-gray-200 ${client.complete ? 'completed' : ''}`;
+                    row.innerHTML = `
+                        <td class="p-4 py-3 align-top">${client.company}</td>
+                        <td class="p-4 py-3 align-top">${client.services}</td>
+                        <td class="p-4 py-3 align-top text-center">
+                            <input type="checkbox" class="w-4 h-4 text-[#E42642] border-gray-300 rounded-sm focus:ring-[#E42642] bg-gray-100" ${client.complete ? 'checked' : ''}>
+                        </td>
+                        <td class="p-4 py-3 align-top text-center">
+                            <button class="remove-client-btn text-red-400 hover:text-red-600 font-bold text-xl">&times;</button>
+                        </td>
+                    `;
+                    clientTableBody.appendChild(row);
+                });
+            };
+            
+            const filterAndRender = () => {
+                let filteredData = clientData;
+                if (currentFilter === 'complete') {
+                    filteredData = clientData.filter(client => client.complete);
+                } else if (currentFilter === 'incomplete') {
+                    filteredData = clientData.filter(client => !client.complete);
+                }
+                renderClientTable(filteredData);
+            };
+
+            addClientBtn.addEventListener('click', () => {
+                addClientModal.classList.remove('hidden');
+                newClientCompanyInput.value = '';
+                newClientServicesInput.value = '';
+            });
+
+            closeModalBtn.addEventListener('click', () => {
+                addClientModal.classList.add('hidden');
+            });
+
+            cancelNewClientBtn.addEventListener('click', () => {
+                addClientModal.classList.add('hidden');
+            });
+
+            newClientForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const newClient = {
+                    company: newClientCompanyInput.value.trim(),
+                    services: newClientServicesInput.value.trim(),
+                    complete: false
+                };
+                if (newClient.company && newClient.services) {
+                    clientData.push(newClient);
+                    filterAndRender();
+                    addClientModal.classList.add('hidden');
+                }
+            });
+
+            clientTableBody.addEventListener('change', (e) => {
+                if (e.target.type === 'checkbox') {
+                    const row = e.target.closest('tr');
+                    const companyName = row.children[0].textContent;
+                    const client = clientData.find(c => c.company === companyName);
+                    if (client) {
+                        client.complete = e.target.checked;
+                        row.classList.toggle('completed', e.target.checked);
+                    }
+                }
+            });
+            
+            clientTableBody.addEventListener('click', (e) => {
+                if (e.target.classList.contains('remove-client-btn')) {
+                    const row = e.target.closest('tr');
+                    const rowIndex = Array.from(clientTableBody.children).indexOf(row);
+                    lastRemovedClient = clientData.splice(rowIndex, 1)[0];
+                    filterAndRender();
+                    undoBtn.classList.remove('hidden');
+                }
+            });
+
+            undoBtn.addEventListener('click', () => {
+                if (lastRemovedClient) {
+                    clientData.push(lastRemovedClient);
+                    filterAndRender();
+                    lastRemovedClient = null;
+                    undoBtn.classList.add('hidden');
+                }
+            });
+
+            filterClientsSelect.addEventListener('change', (e) => {
+                currentFilter = e.target.value;
+                filterAndRender();
+            });
+            
+            sortableHeaders.forEach(header => {
+                header.addEventListener('click', (e) => {
+                    const sortKey = e.target.dataset.sortKey;
+                    const direction = sortDirection[sortKey] === 'asc' ? 'desc' : 'asc';
+                    sortDirection[sortKey] = direction;
+                    
+                    clientData.sort((a, b) => {
+                        const aValue = a[sortKey].toLowerCase();
+                        const bValue = b[sortKey].toLowerCase();
+                        if (aValue < bValue) return direction === 'asc' ? -1 : 1;
+                        if (aValue > bValue) return direction === 'asc' ? 1 : -1;
+                        return 0;
+                    });
+                    
+                    filterAndRender();
+                });
+            });
+
+            filterAndRender();
+        });
+    </script>
+</body>
+</html>
