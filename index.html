@@ -5,18 +5,35 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Interactive Monthly Planner</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        :root {
+            --bg-color: #F5F5F5;
+            --text-color: #333333;
+            --card-bg: #FFFFFF;
+            --accent-color: #E42642;
+            --completed-color: #B5B5B5;
+            --overdue-color: #E42642;
+            --progress-bg: #e5e7eb;
+            --progress-fill: #10b981;
+        }
+        .dark {
+            --bg-color: #1a1a1a;
+            --text-color: #f5f5f5;
+            --card-bg: #2a2a2a;
+            --completed-color: #808080;
+            --progress-bg: #4b5563;
+        }
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #F5F5F5;
-            color: #333333;
+            background-color: var(--bg-color);
+            color: var(--text-color);
         }
         .nav-btn {
             transition: all 0.3s ease;
         }
         .nav-btn.active {
-            background-color: #E42642;
+            background-color: var(--accent-color);
             color: white;
             font-weight: 600;
         }
@@ -34,7 +51,7 @@
         }
         .completed {
             text-decoration: line-through;
-            color: #B5B5B5;
+            color: var(--completed-color);
         }
         .sortable-header {
             cursor: pointer;
@@ -50,12 +67,11 @@
             height: 100%;
             overflow: auto;
             background-color: rgba(0,0,0,0.5);
-            display: flex;
             align-items: center;
             justify-content: center;
         }
         .modal-content {
-            background-color: #fefefe;
+            background-color: var(--card-bg);
             padding: 24px;
             border-radius: 0.75rem;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
@@ -70,115 +86,145 @@
         }
         .close-btn:hover,
         .close-btn:focus {
-            color: black;
+            color: var(--text-color);
             text-decoration: none;
             cursor: pointer;
         }
         .overdue {
-            color: #E42642;
+            color: var(--overdue-color);
             font-weight: bold;
         }
         .progress-bar {
-            background-color: #e5e7eb;
+            background-color: var(--progress-bg);
             height: 8px;
             border-radius: 9999px;
             overflow: hidden;
         }
         .progress-fill {
-            background-color: #10b981;
+            background-color: var(--progress-fill);
             height: 100%;
             transition: width 0.3s ease;
         }
+        .error-message {
+            color: #E42642;
+            font-size: 0.875rem;
+            margin-top: 0.25rem;
+        }
+        [role="tab"]:focus {
+            outline: 2px solid var(--accent-color);
+        }
     </style>
 </head>
-<body class="antialiased bg-gray-100 text-gray-900">
+<body class="antialiased text-gray-900" data-theme="light">
     <div class="container mx-auto p-4 sm:p-6 md:p-8 max-w-7xl">
-        <header class="text-center mb-8">
+        <header class="text-center mb-8 flex justify-between items-center">
             <h1 class="text-4xl font-bold text-gray-800">Monthly Work Planner</h1>
-            <p class="text-lg text-gray-600 mt-2">A dynamic and interactive schedule to keep you organized.</p>
+            <div class="flex gap-4">
+                <button id="dark-mode-toggle" class="bg-gray-200 text-gray-800 font-semibold py-2 px-4 rounded-lg">Toggle Dark Mode</button>
+                <button id="export-data-btn" class="bg-blue-500 text-white font-semibold py-2 px-4 rounded-lg">Export Data</button>
+                <label for="import-data-input" class="bg-green-500 text-white font-semibold py-2 px-4 rounded-lg cursor-pointer">Import Data
+                    <input type="file" id="import-data-input" accept=".json" class="hidden">
+                </label>
+            </div>
+            <p class="text-lg text-gray-600 mt-2 w-full">A dynamic and interactive schedule to keep you organized.</p>
         </header>
 
         <main>
-            <nav class="flex justify-center items-center bg-white rounded-xl shadow-sm p-2 mb-8" id="week-navigation">
-                <button data-week="1" class="nav-btn w-1/4 py-3 px-2 text-center rounded-lg text-gray-700 active">Week 1</button>
-                <button data-week="2" class="nav-btn w-1/4 py-3 px-2 text-center rounded-lg text-gray-700">Week 2</button>
-                <button data-week="3" class="nav-btn w-1/4 py-3 px-2 text-center rounded-lg text-gray-700">Week 3</button>
-                <button data-week="4" class="nav-btn w-1/4 py-3 px-2 text-center rounded-lg text-gray-700">Week 4</button>
+            <nav class="flex justify-center items-center bg-white rounded-xl shadow-sm p-2 mb-4" id="month-navigation">
+                <button id="prev-month" class="nav-btn px-4 py-2 text-gray-700">&lt; Prev</button>
+                <span id="current-month" class="px-4 py-2 font-semibold"></span>
+                <button id="next-month" class="nav-btn px-4 py-2 text-gray-700">Next &gt;</button>
             </nav>
+
+            <nav class="flex justify-center items-center bg-white rounded-xl shadow-sm p-2 mb-8" id="week-navigation" role="tablist">
+            </nav>
+
+            <div id="monthly-progress" class="mb-8 bg-white p-6 rounded-xl shadow-sm">
+                <h2 class="text-2xl font-bold text-gray-800 mb-4">Monthly Progress</h2>
+                <div class="progress-bar mb-2">
+                    <div id="monthly-progress-fill" class="progress-fill" style="width: 0%"></div>
+                </div>
+                <p id="monthly-progress-text" class="text-sm text-gray-600 text-center">0% Complete</p>
+            </div>
 
             <div id="planner-content">
             </div>
             
             <section id="deadlines-section" class="mt-10 bg-white p-6 rounded-xl shadow-sm">
-                 <h2 class="text-2xl font-bold text-gray-800 mb-4 border-b-2 border-gray-200 pb-2">Upcoming Deadlines</h2>
-                 <p class="text-gray-600 mb-6">Use this section to track specific deadlines for projects and tasks. Add new deadlines using the form below.</p>
-                 <ul id="deadline-list" class="space-y-3 mb-8">
-                 </ul>
-                 <div class="mt-6">
-                     <h3 class="text-xl font-semibold text-gray-800 mb-3">Add a New Deadline</h3>
-                     <form id="add-deadline-form" class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
-                          <div class="md:col-span-1">
-                               <label for="deadline-date" class="block text-sm font-medium text-gray-700">Date</label>
-                               <input type="date" id="deadline-date" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 p-2 bg-white text-gray-900">
-                            </div>
-                           <div class="md:col-span-2">
-                               <label for="deadline-task" class="block text-sm font-medium text-gray-700">Project/Task Name</label>
-                               <input type="text" id="deadline-task" placeholder="e.g., Finalize Q3 Report" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 p-2 bg-white text-gray-900">
-                            </div>
-                             <div class="md:col-span-1">
-                               <label for="deadline-client" class="block text-sm font-medium text-gray-700">Client</label>
-                               <input type="text" id="deadline-client" placeholder="e.g., Client Inc." required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 p-2 bg-white text-gray-900">
-                            </div>
-                           <button type="submit" class="w-full md:w-auto md:col-start-4 bg-[#E42642] text-white font-semibold py-2 px-6 rounded-lg hover:bg-opacity-90 transition-colors">Add Deadline</button>
-                     </form>
-                   </div>
+                <h2 class="text-2xl font-bold text-gray-800 mb-4 border-b-2 border-gray-200 pb-2">Upcoming Deadlines</h2>
+                <p class="text-gray-600 mb-6">Use this section to track specific deadlines for projects and tasks. Add new deadlines using the form below.</p>
+                <ul id="deadline-list" class="space-y-3 mb-8">
+                </ul>
+                <div class="mt-6">
+                    <h3 class="text-xl font-semibold text-gray-800 mb-3">Add a New Deadline</h3>
+                    <form id="add-deadline-form" class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+                        <div class="md:col-span-1">
+                            <label for="deadline-date" class="block text-sm font-medium text-gray-700">Date</label>
+                            <input type="date" id="deadline-date" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 p-2 bg-white text-gray-900">
+                            <p class="error-message hidden" id="deadline-date-error">Please select a date.</p>
+                        </div>
+                        <div class="md:col-span-2">
+                            <label for="deadline-task" class="block text-sm font-medium text-gray-700">Project/Task Name</label>
+                            <input type="text" id="deadline-task" placeholder="e.g., Finalize Q3 Report" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 p-2 bg-white text-gray-900">
+                            <p class="error-message hidden" id="deadline-task-error">Please enter a task name.</p>
+                        </div>
+                        <div class="md:col-span-1">
+                            <label for="deadline-client" class="block text-sm font-medium text-gray-700">Client</label>
+                            <input type="text" id="deadline-client" placeholder="e.g., Client Inc." required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 p-2 bg-white text-gray-900">
+                            <p class="error-message hidden" id="deadline-client-error">Please enter a client.</p>
+                        </div>
+                        <button type="submit" class="w-full md:w-auto md:col-start-4 bg-[#E42642] text-white font-semibold py-2 px-6 rounded-lg hover:bg-opacity-90 transition-colors">Add Deadline</button>
+                    </form>
+                </div>
             </section>
             <section id="clients-section" class="mt-10 bg-white p-6 rounded-xl shadow-sm">
                 <h2 class="text-2xl font-bold text-gray-800 mb-4 border-b-2 border-gray-200 pb-2">Active Clients</h2>
                 <div class="flex justify-between items-center mb-4">
                     <div class="flex items-center gap-2">
-                         <label for="filter-clients" class="text-sm font-medium text-gray-700">Filter by:</label>
-                         <select id="filter-clients" class="bg-white text-gray-900 rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 p-2 text-sm">
-                              <option value="all">All</option>
-                              <option value="incomplete">Incomplete</option>
-                              <option value="complete">Complete</option>
-                         </select>
-                     </div>
+                        <label for="filter-clients" class="text-sm font-medium text-gray-700">Filter by:</label>
+                        <select id="filter-clients" class="bg-white text-gray-900 rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 p-2 text-sm">
+                            <option value="all">All</option>
+                            <option value="incomplete">Incomplete</option>
+                            <option value="complete">Complete</option>
+                        </select>
+                    </div>
                     <div class="flex justify-end gap-2">
-                         <button id="undo-client-btn" class="bg-gray-200 text-gray-600 font-semibold py-2 px-6 rounded-lg hover:bg-gray-300 transition-colors hidden">Undo Remove</button>
-                         <button id="add-client-btn" class="bg-[#E42642] text-white font-semibold py-2 px-6 rounded-lg hover:bg-opacity-90 transition-colors">Add New Client</button>
+                        <button id="undo-client-btn" class="bg-gray-200 text-gray-600 font-semibold py-2 px-6 rounded-lg hover:bg-gray-300 transition-colors hidden">Undo Remove</button>
+                        <button id="add-client-btn" class="bg-[#E42642] text-white font-semibold py-2 px-6 rounded-lg hover:bg-opacity-90 transition-colors">Add New Client</button>
                     </div>
                 </div>
                 <div class="overflow-x-auto">
                     <table class="min-w-full divide-y divide-gray-200">
                         <thead>
-                             <tr>
-                                 <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider sortable-header" data-sort-key="company">Company</th>
-                                 <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider sortable-header" data-sort-key="services">Services</th>
-                                 <th class="px-4 py-3 text-center text-sm font-semibold text-gray-700 uppercase tracking-wider">Complete</th>
-                                 <th class="px-4 py-3 text-center text-sm font-semibold text-gray-700 uppercase tracking-wider">Actions</th>
-                             </tr>
+                            <tr>
+                                <th scope="col" class="px-4 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider sortable-header" data-sort-key="company">Company</th>
+                                <th scope="col" class="px-4 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider sortable-header" data-sort-key="services">Services</th>
+                                <th scope="col" class="px-4 py-3 text-center text-sm font-semibold text-gray-700 uppercase tracking-wider">Complete</th>
+                                <th scope="col" class="px-4 py-3 text-center text-sm font-semibold text-gray-700 uppercase tracking-wider">Actions</th>
+                            </tr>
                         </thead>
                         <tbody id="client-table-body" class="bg-white divide-y divide-gray-200">
-                             </tbody>
-                   </table>
+                        </tbody>
+                    </table>
                 </div>
             </section>
         </main>
     </div>
 
     <div id="add-client-modal" class="modal hidden">
-        <div class="modal-content bg-white p-6 rounded-xl shadow-lg">
+        <div class="modal-content p-6 rounded-xl shadow-lg">
             <span id="close-modal-btn" class="close-btn">&times;</span>
             <h3 class="text-xl font-semibold text-gray-800 mb-4">Add New Client</h3>
             <form id="new-client-form" class="space-y-4">
                 <div>
                     <label for="new-client-company" class="block text-sm font-medium text-gray-700">Company</label>
                     <input type="text" id="new-client-company" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 bg-white text-gray-900">
+                    <p class="error-message hidden" id="new-client-company-error">Please enter a company name.</p>
                 </div>
                 <div>
                     <label for="new-client-services" class="block text-sm font-medium text-gray-700">Services</label>
                     <input type="text" id="new-client-services" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 bg-white text-gray-900">
+                    <p class="error-message hidden" id="new-client-services-error">Please enter services.</p>
                 </div>
                 <div class="flex justify-end gap-2 mt-4">
                     <button type="button" id="cancel-new-client-btn" class="bg-gray-200 text-gray-800 font-semibold py-2 px-6 rounded-lg hover:bg-gray-300 transition-colors">Cancel</button>
@@ -194,85 +240,94 @@
             const STORAGE_KEYS = {
                 DEADLINES: 'monthlyPlannerDeadlines',
                 CLIENTS: 'monthlyPlannerClients',
+                ACTIVE_MONTH: 'monthlyPlannerActiveMonth',
                 ACTIVE_WEEK: 'monthlyPlannerActiveWeek',
-                PLANNER: 'monthlyPlannerData' // New key for saving planner data
+                PLANNER: 'monthlyPlannerData',
+                THEME: 'monthlyPlannerTheme'
             };
 
             let lastRemovedClient = null;
             let sortDirection = {};
             let currentFilter = 'all';
+            let currentDate = new Date('2025-09-09'); // Use provided current date
+            let currentMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+            let activeWeek = 1;
 
             // --- Initial Data Structures ---
-            // Updated to objects for completed status
-            const initialPlannerData = {
-                1: {
-                    title: 'Content Creation Focus',
-                    tasks: {
-                        daily: [
-                            { text: 'Check CMA inbox for anything urgent.', completed: false },
-                            { text: 'Check follow up sheet, confirm meetings and book the boardroom for any meetings.', completed: false },
-                            { text: 'Get to RMS emails', completed: false }
-                        ],
-                        weekly: [
-                            { text: 'Keyword research for new blogs & Write Blogs. Write social media captions.', completed: false },
-                            { text: 'Put content into client folders and notify Stephanie with a dealine for the 20th.', completed: false },
-                            { text: 'Google Ads Report (Friday)', completed: false }
-                        ],
-                        monthly: [
-                            { text: 'Create and schedule content.', completed: false },
-                            { text: 'SEO optimisation for clients.', completed: false },
-                            { text: 'Update SEO sheets.', completed: false }
-                        ]
+            const getDefaultTasks = (week) => {
+                const defaults = [
+                    null,
+                    {
+                        title: 'Content Creation Focus',
+                        tasks: {
+                            daily: [
+                                { text: 'Check CMA inbox for anything urgent.', completed: false, priority: 'medium' },
+                                { text: 'Check follow up sheet, confirm meetings and book the boardroom for any meetings.', completed: false, priority: 'high' },
+                                { text: 'Get to RMS emails', completed: false, priority: 'medium' }
+                            ],
+                            weekly: [
+                                { text: 'Keyword research for new blogs & Write Blogs. Write social media captions.', completed: false, priority: 'high' },
+                                { text: 'Put content into client folders and notify Stephanie with a deadline for the 20th.', completed: false, priority: 'medium' },
+                                { text: 'Google Ads Report (Friday)', completed: false, priority: 'high' }
+                            ],
+                            monthly: [
+                                { text: 'Create and schedule content.', completed: false, priority: 'high' },
+                                { text: 'SEO optimisation for clients.', completed: false, priority: 'medium' },
+                                { text: 'Update SEO sheets.', completed: false, priority: 'low' }
+                            ]
+                        }
+                    },
+                    // ... similar for other weeks, adapted
+                    {
+                        title: 'SEO Optimization Focus',
+                        tasks: {
+                            daily: [
+                                { text: 'Check CMA inbox for anything urgent.', completed: false, priority: 'medium' },
+                                { text: 'Check follow up sheet, confirm meetings and book the boardroom for any meetings.', completed: false, priority: 'high' },
+                                { text: 'Get to RMS emails', completed: false, priority: 'medium' }
+                            ],
+                            weekly: [
+                                { text: 'On-Page SEO keywords. Meta Descriptions. Image Alt tags.', completed: false, priority: 'high' },
+                                { text: 'Google Ads Report (Friday)', completed: false, priority: 'high' }
+                            ],
+                            monthly: []
+                        }
+                    },
+                    {
+                        title: 'Content Review & Reporting Focus',
+                        tasks: {
+                            daily: [
+                                { text: 'Check CMA inbox for anything urgent.', completed: false, priority: 'medium' },
+                                { text: 'Check follow up sheet, confirm meetings and book the boardroom for any meetings.', completed: false, priority: 'high' },
+                                { text: 'Get to RMS emails', completed: false, priority: 'medium' }
+                            ],
+                            weekly: [
+                                { text: 'Send out SEO report to all clients (Wednesday).', completed: false, priority: 'high' },
+                                { text: 'Mail shots (Thursday).', completed: false, priority: 'medium' },
+                                { text: 'Get content from Stephanie.', completed: false, priority: 'medium' },
+                                { text: 'Google Ads Report (Friday)', completed: false, priority: 'high' }
+                            ],
+                            monthly: []
+                        }
+                    },
+                    {
+                        title: 'Content Scheduling Focus',
+                        tasks: {
+                            daily: [
+                                { text: 'Check CMA inbox for anything urgent.', completed: false, priority: 'medium' },
+                                { text: 'Check follow up sheet, confirm meetings and book the boardroom for any meetings.', completed: false, priority: 'high' },
+                                { text: 'Get to RMS emails', completed: false, priority: 'medium' }
+                            ],
+                            weekly: [
+                                { text: 'Schedule content for the coming month.', completed: false, priority: 'high' },
+                                { text: 'Brainstorm ideas.', completed: false, priority: 'low' },
+                                { text: 'Google Ads Report (Friday)', completed: false, priority: 'high' }
+                            ],
+                            monthly: []
+                        }
                     }
-                },
-                2: {
-                    title: 'SEO Optimization Focus',
-                    tasks: {
-                        daily: [
-                            { text: 'Check CMA inbox for anything urgent.', completed: false },
-                            { text: 'Check follow up sheet, confirm meetings and book the boardroom for any meetings.', completed: false },
-                            { text: 'Get to RMS emails', completed: false }
-                        ],
-                        weekly: [
-                            { text: 'On-Page SEO keywords. Meta Descriptions. Image Alt tags.', completed: false },
-                            { text: 'Google Ads Report (Friday)', completed: false }
-                        ],
-                        monthly: []
-                    }
-                },
-                3: {
-                    title: 'Content Review & Reporting Focus',
-                    tasks: {
-                        daily: [
-                            { text: 'Check CMA inbox for anything urgent.', completed: false },
-                            { text: 'Check follow up sheet, confirm meetings and book the boardroom for any meetings.', completed: false },
-                            { text: 'Get to RMS emails', completed: false }
-                        ],
-                        weekly: [
-                            { text: 'Send out SEO report to all clients (Wednesday).', completed: false },
-                            { text: 'Mail shots (Thursday).', completed: false },
-                            { text: 'Get content from Stephanie.', completed: false },
-                            { text: 'Google Ads Report (Friday)', completed: false }
-                        ],
-                        monthly: []
-                    }
-                },
-                4: {
-                    title: 'Content Scheduling Focus',
-                    tasks: {
-                        daily: [
-                            { text: 'Check CMA inbox for anything urgent.', completed: false },
-                            { text: 'Check follow up sheet, confirm meetings and book the boardroom for any meetings.', completed: false },
-                            { text: 'Get to RMS emails', completed: false }
-                        ],
-                        weekly: [
-                            { text: 'Schedule content for the coming month.', completed: false },
-                            { text: 'Brainstorm ideas.', completed: false },
-                            { text: 'Google Ads Report (Friday)', completed: false }
-                        ],
-                        monthly: []
-                    }
-                }
+                ];
+                return defaults[week] || { title: `Week ${week}`, tasks: { daily: [], weekly: [], monthly: [] } };
             };
 
             // --- Load Data from localStorage ---
@@ -287,15 +342,11 @@
             };
 
             // --- Initialize Data ---
-            let plannerData = loadData(STORAGE_KEYS.PLANNER) || initialPlannerData;
-            // Ensure tasks are objects (for backward compatibility if needed)
-            Object.keys(plannerData).forEach(week => {
-                Object.keys(plannerData[week].tasks).forEach(type => {
-                    plannerData[week].tasks[type] = plannerData[week].tasks[type].map(task => {
-                        return typeof task === 'string' ? { text: task, completed: false } : task;
-                    });
-                });
-            });
+            let plannerData = loadData(STORAGE_KEYS.PLANNER) || {};
+            const monthKey = currentMonth.toISOString().slice(0, 7);
+            if (!plannerData[monthKey]) {
+                plannerData[monthKey] = { weeks: [null, getDefaultTasks(1), getDefaultTasks(2), getDefaultTasks(3), getDefaultTasks(4)] };
+            }
             let deadlines = loadData(STORAGE_KEYS.DEADLINES) || [];
             let clientData = loadData(STORAGE_KEYS.CLIENTS) || [
                 { company: 'Prominent Roofing', services: 'Google Ads, 1 SEO blog, 4 posts', complete: false },
@@ -305,11 +356,24 @@
                 { company: 'Landy Logic', services: 'Google Ads, 4 posts', complete: false },
                 { company: 'Absolute Ablutions', services: 'Google Ads, 2 SEO blogs', complete: false }
             ];
-            let activeWeek = parseInt(loadData(STORAGE_KEYS.ACTIVE_WEEK)) || 1;
+            const savedMonth = loadData(STORAGE_KEYS.ACTIVE_MONTH);
+            if (savedMonth) {
+                currentMonth = new Date(savedMonth);
+            }
+            activeWeek = parseInt(loadData(STORAGE_KEYS.ACTIVE_WEEK)) || 1;
+            const theme = loadData(STORAGE_KEYS.THEME) || 'light';
+            document.body.dataset.theme = theme;
+            if (theme === 'dark') document.body.classList.add('dark');
 
             // --- DOM Elements ---
+            const monthNav = document.getElementById('month-navigation');
+            const prevMonthBtn = document.getElementById('prev-month');
+            const nextMonthBtn = document.getElementById('next-month');
+            const currentMonthSpan = document.getElementById('current-month');
             const navigation = document.getElementById('week-navigation');
             const contentContainer = document.getElementById('planner-content');
+            const monthlyProgressFill = document.getElementById('monthly-progress-fill');
+            const monthlyProgressText = document.getElementById('monthly-progress-text');
             const deadlineForm = document.getElementById('add-deadline-form');
             const deadlineList = document.getElementById('deadline-list');
             const clientTableBody = document.getElementById('client-table-body');
@@ -317,6 +381,9 @@
             const undoBtn = document.getElementById('undo-client-btn');
             const sortableHeaders = document.querySelectorAll('.sortable-header');
             const filterClientsSelect = document.getElementById('filter-clients');
+            const darkModeToggle = document.getElementById('dark-mode-toggle');
+            const exportBtn = document.getElementById('export-data-btn');
+            const importInput = document.getElementById('import-data-input');
 
             // Modal elements
             const addClientModal = document.getElementById('add-client-modal');
@@ -326,7 +393,18 @@
             const closeModalBtn = document.getElementById('close-modal-btn');
             const cancelNewClientBtn = document.getElementById('cancel-new-client-btn');
 
-            // --- Helper to calculate progress ---
+            // --- Helpers ---
+            const getMonthKey = (date) => date.toISOString().slice(0, 7);
+
+            const getWeeksInMonth = (date) => {
+                const year = date.getFullYear();
+                const month = date.getMonth();
+                const firstDay = new Date(year, month, 1).getDay();
+                const daysInMonth = new Date(year, month + 1, 0).getDate();
+                const weeks = Math.ceil((daysInMonth + firstDay) / 7);
+                return weeks;
+            };
+
             const calculateProgress = (tasks) => {
                 const allTasks = [...tasks.daily, ...tasks.weekly, ...tasks.monthly];
                 if (allTasks.length === 0) return 0;
@@ -334,22 +412,55 @@
                 return Math.round((completed / allTasks.length) * 100);
             };
 
-            // --- Render Functions ---
-            const renderWeekContent = (week) => {
-                const weekData = plannerData[week];
-                if (!weekData) return;
+            const calculateMonthlyProgress = (monthData) => {
+                let totalCompleted = 0;
+                let totalTasks = 0;
+                monthData.weeks.forEach(weekData => {
+                    if (weekData) {
+                        const tasks = weekData.tasks;
+                        const allTasks = [...tasks.daily, ...tasks.weekly, ...tasks.monthly];
+                        totalTasks += allTasks.length;
+                        totalCompleted += allTasks.filter(t => t.completed).length;
+                    }
+                });
+                return totalTasks > 0 ? Math.round((totalCompleted / totalTasks) * 100) : 0;
+            };
 
+            // --- Render Functions ---
+            const renderMonthNavigation = () => {
+                currentMonthSpan.textContent = currentMonth.toLocaleString('default', { month: 'long', year: 'numeric' });
+            };
+
+            const renderWeekNavigation = () => {
+                navigation.innerHTML = '';
+                const weeks = getWeeksInMonth(currentMonth);
+                for (let i = 1; i <= weeks; i++) {
+                    const btn = document.createElement('button');
+                    btn.dataset.week = i;
+                    btn.className = 'nav-btn w-1/4 py-3 px-2 text-center rounded-lg text-gray-700';
+                    btn.role = 'tab';
+                    btn.ariaSelected = (i === activeWeek) ? 'true' : 'false';
+                    btn.textContent = `Week ${i}`;
+                    if (i === activeWeek) btn.classList.add('active');
+                    navigation.appendChild(btn);
+                }
+            };
+
+            const renderWeekContent = (week) => {
+                const monthKey = getMonthKey(currentMonth);
+                const weekData = plannerData[monthKey].weeks[week] || getDefaultTasks(week);
+                plannerData[monthKey].weeks[week] = weekData;
                 const progress = calculateProgress(weekData.tasks);
 
                 let monthlyTasksHtml = '';
                 if (weekData.tasks.monthly.length > 0) {
                     monthlyTasksHtml = `
-                        <div class="task-card bg-white p-6 rounded-xl shadow-sm">
-                            <h3 class="text-xl font-semibold text-gray-800 mb-3">Monthly Tasks</h3>
-                            <ul id="monthly-tasks-${week}" class="text-gray-600" draggable="true">${weekData.tasks.monthly.map((task, i) => `
-                                <li data-type="monthly" data-index="${i}">
-                                    <input type="checkbox" class="task-checkbox mr-2 w-4 h-4 text-[#E42642] border-gray-300 rounded-sm focus:ring-[#E42642]" ${task.completed ? 'checked' : ''}>
-                                    <span class="${task.completed ? 'completed' : ''}">${task.text}</span>
+                        <div class="task-card bg-[var(--card-bg)] p-6 rounded-xl shadow-sm">
+                            <h3 class="text-xl font-semibold mb-3">Monthly Tasks</h3>
+                            <ul id="monthly-tasks-${week}" class="text-[var(--text-color)]" draggable="true">${weekData.tasks.monthly.map((task, i) => `
+                                <li data-type="monthly" data-index="${i}" role="listitem" class="priority-${task.priority}">
+                                    <input type="checkbox" id="task-${week}-monthly-${i}" class="task-checkbox mr-2 w-4 h-4 text-[var(--accent-color)] border-gray-300 rounded-sm focus:ring-[var(--accent-color)]" ${task.completed ? 'checked' : ''}>
+                                    <label for="task-${week}-monthly-${i}" class="flex-1 ${task.completed ? 'completed' : ''}">${task.text}</label>
                                 </li>
                             `).join('')}</ul>
                         </div>
@@ -358,7 +469,7 @@
 
                 contentContainer.innerHTML = `
                     <section id="week-${week}-content" class="bg-gray-100 p-6 rounded-xl">
-                        <h2 class="text-2xl font-bold text-gray-800 mb-4 text-center">${weekData.title}</h2>
+                        <h2 class="text-2xl font-bold mb-4 text-center">${weekData.title}</h2>
                         <div class="mb-4">
                             <div class="progress-bar">
                                 <div class="progress-fill" style="width: ${progress}%"></div>
@@ -366,21 +477,21 @@
                             <p class="text-sm text-gray-600 mt-1 text-center">${progress}% Complete</p>
                         </div>
                         <div class="grid grid-cols-1 md:grid-cols-2 ${monthlyTasksHtml ? 'lg:grid-cols-3' : ''} gap-6">
-                            <div class="task-card bg-white p-6 rounded-xl shadow-sm">
-                                <h3 class="text-xl font-semibold text-gray-800 mb-3">Daily Tasks</h3>
-                                <ul id="daily-tasks-${week}" class="text-gray-600" draggable="true">${weekData.tasks.daily.map((task, i) => `
-                                    <li data-type="daily" data-index="${i}">
-                                        <input type="checkbox" class="task-checkbox mr-2 w-4 h-4 text-[#E42642] border-gray-300 rounded-sm focus:ring-[#E42642]" ${task.completed ? 'checked' : ''}>
-                                        <span class="${task.completed ? 'completed' : ''}">${task.text}</span>
+                            <div class="task-card bg-[var(--card-bg)] p-6 rounded-xl shadow-sm">
+                                <h3 class="text-xl font-semibold mb-3">Daily Tasks</h3>
+                                <ul id="daily-tasks-${week}" class="text-[var(--text-color)]" draggable="true">${weekData.tasks.daily.map((task, i) => `
+                                    <li data-type="daily" data-index="${i}" role="listitem" class="priority-${task.priority}">
+                                        <input type="checkbox" id="task-${week}-daily-${i}" class="task-checkbox mr-2 w-4 h-4 text-[var(--accent-color)] border-gray-300 rounded-sm focus:ring-[var(--accent-color)]" ${task.completed ? 'checked' : ''}>
+                                        <label for="task-${week}-daily-${i}" class="flex-1 ${task.completed ? 'completed' : ''}">${task.text}</label>
                                     </li>
                                 `).join('')}</ul>
                             </div>
-                            <div class="task-card bg-white p-6 rounded-xl shadow-sm">
-                                <h3 class="text-xl font-semibold text-gray-800 mb-3">Weekly Tasks</h3>
-                                <ul id="weekly-tasks-${week}" class="text-gray-600" draggable="true">${weekData.tasks.weekly.map((task, i) => `
-                                    <li data-type="weekly" data-index="${i}">
-                                        <input type="checkbox" class="task-checkbox mr-2 w-4 h-4 text-[#E42642] border-gray-300 rounded-sm focus:ring-[#E42642]" ${task.completed ? 'checked' : ''}>
-                                        <span class="${task.completed ? 'completed' : ''}">${task.text}</span>
+                            <div class="task-card bg-[var(--card-bg)] p-6 rounded-xl shadow-sm">
+                                <h3 class="text-xl font-semibold mb-3">Weekly Tasks</h3>
+                                <ul id="weekly-tasks-${week}" class="text-[var(--text-color)]" draggable="true">${weekData.tasks.weekly.map((task, i) => `
+                                    <li data-type="weekly" data-index="${i}" role="listitem" class="priority-${task.priority}">
+                                        <input type="checkbox" id="task-${week}-weekly-${i}" class="task-checkbox mr-2 w-4 h-4 text-[var(--accent-color)] border-gray-300 rounded-sm focus:ring-[var(--accent-color)]" ${task.completed ? 'checked' : ''}>
+                                        <label for="task-${week}-weekly-${i}" class="flex-1 ${task.completed ? 'completed' : ''}">${task.text}</label>
                                     </li>
                                 `).join('')}</ul>
                             </div>
@@ -389,28 +500,43 @@
                     </section>
                 `;
 
-                // Add drag-and-drop for sorting tasks
+                // Update monthly progress
+                const monthProgress = calculateMonthlyProgress(plannerData[monthKey]);
+                monthlyProgressFill.style.width = `${monthProgress}%`;
+                monthlyProgressText.textContent = `${monthProgress}% Complete`;
+
+                // Add drag-and-drop
+                let draggedItem = null;
                 ['daily', 'weekly', 'monthly'].forEach(type => {
                     const ul = document.getElementById(`${type}-tasks-${week}`);
                     if (ul) {
                         ul.addEventListener('dragstart', (e) => {
+                            draggedItem = e.target.closest('li');
+                            draggedItem.classList.add('opacity-50');
+                            e.dataTransfer.effectAllowed = 'move';
                             e.dataTransfer.setData('text/plain', '');
-                            e.target.closest('li').classList.add('opacity-50');
                         });
-                        ul.addEventListener('dragend', (e) => {
-                            e.target.closest('li').classList.remove('opacity-50');
+                        ul.addEventListener('dragend', () => {
+                            if (draggedItem) draggedItem.classList.remove('opacity-50');
+                            draggedItem = null;
                         });
-                        ul.addEventListener('dragover', (e) => e.preventDefault());
+                        ul.addEventListener('dragover', (e) => {
+                            e.preventDefault();
+                            e.dataTransfer.dropEffect = 'move';
+                        });
                         ul.addEventListener('drop', (e) => {
                             e.preventDefault();
-                            const draggedLi = document.querySelector('.opacity-50');
-                            if (draggedLi) {
-                                ul.insertBefore(draggedLi, e.target.closest('li'));
-                                // Update data order
-                                const newOrder = Array.from(ul.children).map(li => plannerData[week].tasks[type][li.dataset.index]);
-                                plannerData[week].tasks[type] = newOrder;
+                            if (draggedItem) {
+                                const targetLi = e.target.closest('li');
+                                if (targetLi && draggedItem !== targetLi) {
+                                    ul.insertBefore(draggedItem, targetLi.nextSibling);
+                                }
+                                // Update data
+                                const newOrder = Array.from(ul.children).map(li => weekData.tasks[type][parseInt(li.dataset.index)]);
+                                weekData.tasks[type] = newOrder;
+                                // Re-index
+                                Array.from(ul.children).forEach((li, idx) => li.dataset.index = idx);
                                 saveData(STORAGE_KEYS.PLANNER, plannerData);
-                                renderWeekContent(week); // Re-render to update indices
                             }
                         });
                     }
@@ -418,7 +544,7 @@
             };
 
             const renderDeadlineList = () => {
-                deadlineList.innerHTML = ''; // Clear existing list
+                deadlineList.innerHTML = '';
                 if (deadlines.length === 0) {
                     deadlineList.innerHTML = '<li class="p-4 bg-gray-100 rounded-lg text-gray-500">No deadlines added yet.</li>';
                     return;
@@ -431,7 +557,7 @@
                     li.className = `p-4 bg-gray-100 rounded-lg flex items-center justify-between ${isOverdue ? 'overdue' : ''}`;
                     li.innerHTML = `
                         <div>
-                            <span class="font-semibold text-gray-700">${new Date(deadline.date + 'T00:00:00').toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })}:</span>
+                            <span class="font-semibold text-gray-700">${new Date(deadline.date).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })}:</span>
                             <span class="text-gray-600"> ${deadline.task} - ${deadline.client}</span>
                         </div>
                         <button data-index="${idx}" class="remove-deadline text-red-400 hover:text-red-600 font-bold text-xl cursor-pointer">&times;</button>
@@ -462,7 +588,7 @@
                     clientTableBody.appendChild(row);
                 });
             };
-            
+
             const filterAndRenderClients = () => {
                 const mapped = clientData.map((c, i) => ({ ...c, __idx: i }));
                 let filteredData = [...mapped];
@@ -474,18 +600,51 @@
                 renderClientTable(filteredData);
             };
 
+            // --- Form Validation Helper ---
+            const showError = (id, show) => {
+                document.getElementById(id).classList.toggle('hidden', !show);
+            };
+
             // --- Event Listeners ---
 
-            // Navigation for Weeks
+            // Month Navigation
+            prevMonthBtn.addEventListener('click', () => {
+                currentMonth.setMonth(currentMonth.getMonth() - 1);
+                const monthKey = getMonthKey(currentMonth);
+                if (!plannerData[monthKey]) plannerData[monthKey] = { weeks: [] };
+                activeWeek = 1;
+                renderMonthNavigation();
+                renderWeekNavigation();
+                renderWeekContent(activeWeek);
+                saveData(STORAGE_KEYS.ACTIVE_MONTH, currentMonth.toISOString());
+                saveData(STORAGE_KEYS.ACTIVE_WEEK, activeWeek);
+                saveData(STORAGE_KEYS.PLANNER, plannerData);
+            });
+
+            nextMonthBtn.addEventListener('click', () => {
+                currentMonth.setMonth(currentMonth.getMonth() + 1);
+                const monthKey = getMonthKey(currentMonth);
+                if (!plannerData[monthKey]) plannerData[monthKey] = { weeks: [] };
+                activeWeek = 1;
+                renderMonthNavigation();
+                renderWeekNavigation();
+                renderWeekContent(activeWeek);
+                saveData(STORAGE_KEYS.ACTIVE_MONTH, currentMonth.toISOString());
+                saveData(STORAGE_KEYS.ACTIVE_WEEK, activeWeek);
+                saveData(STORAGE_KEYS.PLANNER, plannerData);
+            });
+
+            // Week Navigation
             navigation.addEventListener('click', (e) => {
                 if (e.target.classList.contains('nav-btn')) {
-                    const week = e.target.dataset.week;
-                    
-                    document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+                    activeWeek = parseInt(e.target.dataset.week);
+                    document.querySelectorAll('.nav-btn').forEach(btn => {
+                        btn.classList.remove('active');
+                        btn.ariaSelected = 'false';
+                    });
                     e.target.classList.add('active');
-                    
-                    renderWeekContent(week);
-                    activeWeek = parseInt(week);
+                    e.target.ariaSelected = 'true';
+                    renderWeekContent(activeWeek);
                     saveData(STORAGE_KEYS.ACTIVE_WEEK, activeWeek);
                 }
             });
@@ -496,30 +655,41 @@
                     const li = e.target.closest('li');
                     const type = li.dataset.type;
                     const index = parseInt(li.dataset.index);
-                    plannerData[activeWeek].tasks[type][index].completed = e.target.checked;
+                    const monthKey = getMonthKey(currentMonth);
+                    plannerData[monthKey].weeks[activeWeek].tasks[type][index].completed = e.target.checked;
                     saveData(STORAGE_KEYS.PLANNER, plannerData);
-                    renderWeekContent(activeWeek); // Re-render to update progress and styles
+                    li.querySelector('label').classList.toggle('completed', e.target.checked);
+                    // Update progress without full re-render
+                    const progress = calculateProgress(plannerData[monthKey].weeks[activeWeek].tasks);
+                    contentContainer.querySelector('.progress-fill').style.width = `${progress}%`;
+                    contentContainer.querySelector('.text-sm').textContent = `${progress}% Complete`;
+                    const monthProgress = calculateMonthlyProgress(plannerData[monthKey]);
+                    monthlyProgressFill.style.width = `${monthProgress}%`;
+                    monthlyProgressText.textContent = `${monthProgress}% Complete`;
                 }
             });
 
-            // Add New Deadline
+            // Add New Deadline with Validation
             deadlineForm.addEventListener('submit', (e) => {
                 e.preventDefault();
-
                 const dateInput = document.getElementById('deadline-date');
                 const taskInput = document.getElementById('deadline-task');
                 const clientInput = document.getElementById('deadline-client');
+                let valid = true;
 
-                const date = dateInput.value;
-                const task = taskInput.value.trim();
-                const client = clientInput.value.trim();
-                
-                if (date && task && client) {
-                    deadlines.push({ date, task, client });
+                showError('deadline-date-error', !dateInput.value);
+                showError('deadline-task-error', !taskInput.value.trim());
+                showError('deadline-client-error', !clientInput.value.trim());
+
+                if (!dateInput.value || !taskInput.value.trim() || !clientInput.value.trim()) {
+                    valid = false;
+                }
+
+                if (valid) {
+                    deadlines.push({ date: dateInput.value, task: taskInput.value.trim(), client: clientInput.value.trim() });
                     deadlines.sort((a, b) => new Date(a.date) - new Date(b.date));
                     renderDeadlineList();
                     saveData(STORAGE_KEYS.DEADLINES, deadlines);
-
                     dateInput.value = '';
                     taskInput.value = '';
                     clientInput.value = '';
@@ -529,68 +699,66 @@
             // Remove Deadline
             deadlineList.addEventListener('click', (e) => {
                 if (e.target.classList.contains('remove-deadline')) {
-                    const indexAttr = e.target.getAttribute('data-index');
-                    if (indexAttr !== null) {
-                        const idx = parseInt(indexAttr, 10);
-                        if (!Number.isNaN(idx) && idx >= 0 && idx < deadlines.length) {
-                            deadlines.splice(idx, 1);
-                            saveData(STORAGE_KEYS.DEADLINES, deadlines);
-                            renderDeadlineList();
-                        }
+                    const idx = parseInt(e.target.dataset.index);
+                    if (!isNaN(idx)) {
+                        deadlines.splice(idx, 1);
+                        saveData(STORAGE_KEYS.DEADLINES, deadlines);
+                        renderDeadlineList();
                     }
                 }
             });
-            
-            // Open Add Client Modal
+
+            // Add Client Modal
             addClientBtn.addEventListener('click', () => {
-                addClientModal.classList.remove('hidden');
-                newClientCompanyInput.value = '';
-                newClientServicesInput.value = '';
+                addClientModal.style.display = 'flex';
+                newClientCompanyInput.focus();
             });
 
-            // Close Add Client Modal
-            closeModalBtn.addEventListener('click', () => {
-                addClientModal.classList.add('hidden');
-            });
-            cancelNewClientBtn.addEventListener('click', () => {
-                addClientModal.classList.add('hidden');
+            closeModalBtn.addEventListener('click', () => addClientModal.style.display = 'none');
+            cancelNewClientBtn.addEventListener('click', () => addClientModal.style.display = 'none');
+
+            // Modal Focus Trap
+            addClientModal.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') addClientModal.style.display = 'none';
             });
 
-            // Add New Client Form Submission
+            // Add New Client with Validation
             newClientForm.addEventListener('submit', (e) => {
                 e.preventDefault();
-                const newClient = {
-                    company: newClientCompanyInput.value.trim(),
-                    services: newClientServicesInput.value.trim(),
-                    complete: false
-                };
-                if (newClient.company && newClient.services) {
-                    clientData.push(newClient);
+                const company = newClientCompanyInput.value.trim();
+                const services = newClientServicesInput.value.trim();
+                let valid = true;
+
+                showError('new-client-company-error', !company);
+                showError('new-client-services-error', !services);
+
+                if (!company || !services) valid = false;
+
+                if (valid) {
+                    clientData.push({ company, services, complete: false });
                     filterAndRenderClients();
-                    addClientModal.classList.add('hidden');
+                    addClientModal.style.display = 'none';
                     saveData(STORAGE_KEYS.CLIENTS, clientData);
                 }
             });
 
-            // Handle Client Checkbox Change
+            // Client Checkbox
             clientTableBody.addEventListener('change', (e) => {
                 if (e.target.classList.contains('client-complete-checkbox')) {
-                    const idxAttr = e.target.getAttribute('data-index');
-                    const idx = idxAttr !== null ? parseInt(idxAttr, 10) : -1;
-                    if (!Number.isNaN(idx) && clientData[idx]) {
+                    const idx = parseInt(e.target.dataset.index);
+                    if (!isNaN(idx)) {
                         clientData[idx].complete = e.target.checked;
                         filterAndRenderClients();
                         saveData(STORAGE_KEYS.CLIENTS, clientData);
                     }
                 }
             });
-            
-            // Remove Client Button Click
+
+            // Remove Client
             clientTableBody.addEventListener('click', (e) => {
                 if (e.target.classList.contains('remove-client-btn')) {
-                    const idxAttr = e.target.getAttribute('data-index');
-                    const idx = idxAttr !== null ? parseInt(idxAttr, 10) : -1;
-                    if (!Number.isNaN(idx) && idx >= 0 && idx < clientData.length) {
+                    const idx = parseInt(e.target.dataset.index);
+                    if (!isNaN(idx)) {
                         lastRemovedClient = clientData.splice(idx, 1)[0];
                         filterAndRenderClients();
                         undoBtn.classList.remove('hidden');
@@ -599,7 +767,7 @@
                 }
             });
 
-            // Undo Remove Client
+            // Undo Remove
             undoBtn.addEventListener('click', () => {
                 if (lastRemovedClient) {
                     clientData.push(lastRemovedClient);
@@ -610,34 +778,94 @@
                 }
             });
 
-            // Filter Clients Dropdown Change
+            // Filter Clients
             filterClientsSelect.addEventListener('change', (e) => {
                 currentFilter = e.target.value;
                 filterAndRenderClients();
             });
-            
-            // Sortable Headers
+
+            // Sorting
             sortableHeaders.forEach(header => {
                 header.addEventListener('click', (e) => {
                     const sortKey = e.target.dataset.sortKey;
                     const direction = sortDirection[sortKey] === 'asc' ? 'desc' : 'asc';
                     sortDirection[sortKey] = direction;
-                    
+                    e.target.textContent = e.target.textContent.replace(/ [▲▼]$/, '') + (direction === 'asc' ? ' ▲' : ' ▼');
+
                     clientData.sort((a, b) => {
                         const aValue = String(a[sortKey]).toLowerCase();
                         const bValue = String(b[sortKey]).toLowerCase();
-                        if (aValue < bValue) return direction === 'asc' ? -1 : 1;
-                        if (aValue > bValue) return direction === 'asc' ? 1 : -1;
-                        return 0;
+                        return direction === 'asc' ? aValue.localeCompare(bValue) : bValue.localeCompare(aValue);
                     });
-                    
+
                     filterAndRenderClients();
                 });
             });
 
-            // --- Initial Render ---
+            // Dark Mode Toggle
+            darkModeToggle.addEventListener('click', () => {
+                const newTheme = document.body.dataset.theme === 'light' ? 'dark' : 'light';
+                document.body.dataset.theme = newTheme;
+                document.body.classList.toggle('dark', newTheme === 'dark');
+                saveData(STORAGE_KEYS.THEME, newTheme);
+            });
+
+            // Export Data
+            exportBtn.addEventListener('click', () => {
+                const exportData = {
+                    planner: plannerData,
+                    deadlines: deadlines,
+                    clients: clientData
+                };
+                const blob = new Blob([JSON.stringify(exportData)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'planner-data.json';
+                a.click();
+                URL.revokeObjectURL(url);
+            });
+
+            // Import Data
+            importInput.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = (event) => {
+                        const imported = JSON.parse(event.target.result);
+                        plannerData = imported.planner || plannerData;
+                        deadlines = imported.deadlines || deadlines;
+                        clientData = imported.clients || clientData;
+                        saveData(STORAGE_KEYS.PLANNER, plannerData);
+                        saveData(STORAGE_KEYS.DEADLINES, deadlines);
+                        saveData(STORAGE_KEYS.CLIENTS, clientData);
+                        renderWeekContent(activeWeek);
+                        renderDeadlineList();
+                        filterAndRenderClients();
+                    };
+                    reader.readAsText(file);
+                }
+            });
+
+            // Notifications for Overdue
+            if (Notification.permission === 'default') {
+                Notification.requestPermission();
+            }
+            if (Notification.permission === 'granted') {
+                const today = new Date().setHours(0,0,0,0);
+                deadlines.forEach(dl => {
+                    if (new Date(dl.date).setHours(0,0,0,0) < today && !dl.notified) {
+                        new Notification('Overdue Deadline', { body: `${dl.task} for ${dl.client}` });
+                        dl.notified = true;
+                        saveData(STORAGE_KEYS.DEADLINES, deadlines);
+                    }
+                });
+            }
+
+            // Initial Render
+            renderMonthNavigation();
+            renderWeekNavigation();
             renderWeekContent(activeWeek);
-            document.querySelector(`[data-week="${activeWeek}"]`).classList.add('active');
             renderDeadlineList();
             filterAndRenderClients();
         });
