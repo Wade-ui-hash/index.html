@@ -21,16 +21,20 @@
             font-weight: 600;
         }
         .task-card ul {
-            list-style: none;
+            list-style-position: inside;
         }
         .task-card ul li {
-            display: flex;
-            align-items: center;
+            position: relative;
+            padding-left: 1.5rem;
             margin-bottom: 0.5rem;
-            cursor: grab;
         }
-        .task-card ul li:active {
-            cursor: grabbing;
+        .task-card ul li::before {
+            content: '•';
+            position: absolute;
+            left: 0.25rem;
+            color: #E42642;
+            font-weight: bold;
+            display: inline-block;
         }
         .completed {
             text-decoration: line-through;
@@ -74,21 +78,6 @@
             text-decoration: none;
             cursor: pointer;
         }
-        .overdue {
-            color: #E42642;
-            font-weight: bold;
-        }
-        .progress-bar {
-            background-color: #e5e7eb;
-            height: 8px;
-            border-radius: 9999px;
-            overflow: hidden;
-        }
-        .progress-fill {
-            background-color: #10b981;
-            height: 100%;
-            transition: width 0.3s ease;
-        }
     </style>
 </head>
 <body class="antialiased bg-gray-100 text-gray-900">
@@ -107,13 +96,13 @@
             </nav>
 
             <div id="planner-content">
-            </div>
+                </div>
             
             <section id="deadlines-section" class="mt-10 bg-white p-6 rounded-xl shadow-sm">
                  <h2 class="text-2xl font-bold text-gray-800 mb-4 border-b-2 border-gray-200 pb-2">Upcoming Deadlines</h2>
                  <p class="text-gray-600 mb-6">Use this section to track specific deadlines for projects and tasks. Add new deadlines using the form below.</p>
                  <ul id="deadline-list" class="space-y-3 mb-8">
-                 </ul>
+                   </ul>
                  <div class="mt-6">
                      <h3 class="text-xl font-semibold text-gray-800 mb-3">Add a New Deadline</h3>
                      <form id="add-deadline-form" class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
@@ -194,8 +183,7 @@
             const STORAGE_KEYS = {
                 DEADLINES: 'monthlyPlannerDeadlines',
                 CLIENTS: 'monthlyPlannerClients',
-                ACTIVE_WEEK: 'monthlyPlannerActiveWeek',
-                PLANNER: 'monthlyPlannerData' // New key for saving planner data
+                ACTIVE_WEEK: 'monthlyPlannerActiveWeek' // To remember the last viewed week
             };
 
             let lastRemovedClient = null;
@@ -203,73 +191,37 @@
             let currentFilter = 'all';
 
             // --- Initial Data Structures ---
-            // Updated to objects for completed status
+            // These are fallback defaults if localStorage is empty
             const initialPlannerData = {
                 1: {
                     title: 'Content Creation Focus',
                     tasks: {
-                        daily: [
-                            { text: 'Check CMA inbox for anything urgent.', completed: false },
-                            { text: 'Check follow up sheet, confirm meetings and book the boardroom for any meetings.', completed: false },
-                            { text: 'Get to RMS emails', completed: false }
-                        ],
-                        weekly: [
-                            { text: 'Keyword research for new blogs & Write Blogs. Write social media captions.', completed: false },
-                            { text: 'Put content into client folders and notify Stephanie with a dealine for the 20th.', completed: false },
-                            { text: 'Google Ads Report (Friday)', completed: false }
-                        ],
-                        monthly: [
-                            { text: 'Create and schedule content.', completed: false },
-                            { text: 'SEO optimisation for clients.', completed: false },
-                            { text: 'Update SEO sheets.', completed: false }
-                        ]
+                        daily: ['Check CMA inbox for anything urgent.', 'Check follow up sheet, confirm meetings and book the boardroom for any meetings.', 'Get to RMS emails'],
+                        weekly: ['Keyword research for new blogs & Write Blogs. Write social media captions.', 'Put content into client folders and notify Stephanie with a dealine for the 20th.','Google Ads Report (Friday)'],
+                        monthly: ['Create and schedule content.', 'SEO optimisation for clients.', 'Update SEO sheets.']
                     }
                 },
                 2: {
                     title: 'SEO Optimization Focus',
                     tasks: {
-                        daily: [
-                            { text: 'Check CMA inbox for anything urgent.', completed: false },
-                            { text: 'Check follow up sheet, confirm meetings and book the boardroom for any meetings.', completed: false },
-                            { text: 'Get to RMS emails', completed: false }
-                        ],
-                        weekly: [
-                            { text: 'On-Page SEO keywords. Meta Descriptions. Image Alt tags.', completed: false },
-                            { text: 'Google Ads Report (Friday)', completed: false }
-                        ],
+                        daily: ['Check CMA inbox for anything urgent.', 'Check follow up sheet, confirm meetings and book the boardroom for any meetings.', 'Get to RMS emails'],
+                        weekly: ['On-Page SEO keywords. Meta Descriptions. Image Alt tags.','Google Ads Report (Friday)'],
                         monthly: []
                     }
                 },
                 3: {
                     title: 'Content Review & Reporting Focus',
                     tasks: {
-                        daily: [
-                            { text: 'Check CMA inbox for anything urgent.', completed: false },
-                            { text: 'Check follow up sheet, confirm meetings and book the boardroom for any meetings.', completed: false },
-                            { text: 'Get to RMS emails', completed: false }
-                        ],
-                        weekly: [
-                            { text: 'Send out SEO report to all clients (Wednesday).', completed: false },
-                            { text: 'Mail shots (Thursday).', completed: false },
-                            { text: 'Get content from Stephanie.', completed: false },
-                            { text: 'Google Ads Report (Friday)', completed: false }
-                        ],
+                        daily: ['Check CMA inbox for anything urgent.', 'Check follow up sheet, confirm meetings and book the boardroom for any meetings.', 'Get to RMS emails'],
+                        weekly: ['Send out SEO report to all clients (Wednesday).', 'Mail shots (Thursday).', 'Get content from Stephanie.','Google Ads Report (Friday)'],
                         monthly: []
                     }
                 },
                 4: {
                     title: 'Content Scheduling Focus',
                     tasks: {
-                        daily: [
-                            { text: 'Check CMA inbox for anything urgent.', completed: false },
-                            { text: 'Check follow up sheet, confirm meetings and book the boardroom for any meetings.', completed: false },
-                            { text: 'Get to RMS emails', completed: false }
-                        ],
-                        weekly: [
-                            { text: 'Schedule content for the coming month.', completed: false },
-                            { text: 'Brainstorm ideas.', completed: false },
-                            { text: 'Google Ads Report (Friday)', completed: false }
-                        ],
+                        daily: ['Check CMA inbox for anything urgent.', 'Check follow up sheet, confirm meetings and book the boardroom for any meetings.', 'Get to RMS emails'],
+                        weekly: ['Schedule content for the coming month.', 'Brainstorm ideas.','Google Ads Report (Friday)'],
                         monthly: []
                     }
                 }
@@ -287,15 +239,7 @@
             };
 
             // --- Initialize Data ---
-            let plannerData = loadData(STORAGE_KEYS.PLANNER) || initialPlannerData;
-            // Ensure tasks are objects (for backward compatibility if needed)
-            Object.keys(plannerData).forEach(week => {
-                Object.keys(plannerData[week].tasks).forEach(type => {
-                    plannerData[week].tasks[type] = plannerData[week].tasks[type].map(task => {
-                        return typeof task === 'string' ? { text: task, completed: false } : task;
-                    });
-                });
-            });
+            let plannerData = loadData(STORAGE_KEYS.ACTIVE_WEEK) ? initialPlannerData : initialPlannerData; // Use initial if no saved week, otherwise use loaded week data
             let deadlines = loadData(STORAGE_KEYS.DEADLINES) || [];
             let clientData = loadData(STORAGE_KEYS.CLIENTS) || [
                 { company: 'Prominent Roofing', services: 'Google Ads, 1 SEO blog, 4 posts', complete: false },
@@ -305,7 +249,7 @@
                 { company: 'Landy Logic', services: 'Google Ads, 4 posts', complete: false },
                 { company: 'Absolute Ablutions', services: 'Google Ads, 2 SEO blogs', complete: false }
             ];
-            let activeWeek = parseInt(loadData(STORAGE_KEYS.ACTIVE_WEEK)) || 1;
+            let activeWeek = parseInt(loadData(STORAGE_KEYS.ACTIVE_WEEK)) || 1; // Default to Week 1
 
             // --- DOM Elements ---
             const navigation = document.getElementById('week-navigation');
@@ -326,95 +270,37 @@
             const closeModalBtn = document.getElementById('close-modal-btn');
             const cancelNewClientBtn = document.getElementById('cancel-new-client-btn');
 
-            // --- Helper to calculate progress ---
-            const calculateProgress = (tasks) => {
-                const allTasks = [...tasks.daily, ...tasks.weekly, ...tasks.monthly];
-                if (allTasks.length === 0) return 0;
-                const completed = allTasks.filter(t => t.completed).length;
-                return Math.round((completed / allTasks.length) * 100);
-            };
-
             // --- Render Functions ---
             const renderWeekContent = (week) => {
                 const weekData = plannerData[week];
                 if (!weekData) return;
 
-                const progress = calculateProgress(weekData.tasks);
-
                 let monthlyTasksHtml = '';
-                if (weekData.tasks.monthly.length > 0) {
+                if (weekData.tasks.monthly && weekData.tasks.monthly.length > 0) {
                     monthlyTasksHtml = `
                         <div class="task-card bg-white p-6 rounded-xl shadow-sm">
                             <h3 class="text-xl font-semibold text-gray-800 mb-3">Monthly Tasks</h3>
-                            <ul id="monthly-tasks-${week}" class="text-gray-600" draggable="true">${weekData.tasks.monthly.map((task, i) => `
-                                <li data-type="monthly" data-index="${i}">
-                                    <input type="checkbox" class="task-checkbox mr-2 w-4 h-4 text-[#E42642] border-gray-300 rounded-sm focus:ring-[#E42642]" ${task.completed ? 'checked' : ''}>
-                                    <span class="${task.completed ? 'completed' : ''}">${task.text}</span>
-                                </li>
-                            `).join('')}</ul>
+                            <ul class="text-gray-600">${weekData.tasks.monthly.map(task => `<li>${task}</li>`).join('')}</ul>
                         </div>
                     `;
                 }
 
                 contentContainer.innerHTML = `
                     <section id="week-${week}-content" class="bg-gray-100 p-6 rounded-xl">
-                        <h2 class="text-2xl font-bold text-gray-800 mb-4 text-center">${weekData.title}</h2>
-                        <div class="mb-4">
-                            <div class="progress-bar">
-                                <div class="progress-fill" style="width: ${progress}%"></div>
+                         <h2 class="text-2xl font-bold text-gray-800 mb-4 text-center">${weekData.title}</h2>
+                         <div class="grid grid-cols-1 md:grid-cols-2 ${monthlyTasksHtml ? 'lg:grid-cols-3' : ''} gap-6">
+                              <div class="task-card bg-white p-6 rounded-xl shadow-sm">
+                                  <h3 class="text-xl font-semibold text-gray-800 mb-3">Daily Tasks</h3>
+                                  <ul class="text-gray-600">${weekData.tasks.daily.map(task => `<li>${task}</li>`).join('')}</ul>
+                              </div>
+                              <div class="task-card bg-white p-6 rounded-xl shadow-sm">
+                                  <h3 class="text-xl font-semibold text-gray-800 mb-3">Weekly Tasks</h3>
+                                  <ul class="text-gray-600">${weekData.tasks.weekly.map(task => `<li>${task}</li>`).join('')}</ul>
+                              </div>
+                                ${monthlyTasksHtml}
                             </div>
-                            <p class="text-sm text-gray-600 mt-1 text-center">${progress}% Complete</p>
-                        </div>
-                        <div class="grid grid-cols-1 md:grid-cols-2 ${monthlyTasksHtml ? 'lg:grid-cols-3' : ''} gap-6">
-                            <div class="task-card bg-white p-6 rounded-xl shadow-sm">
-                                <h3 class="text-xl font-semibold text-gray-800 mb-3">Daily Tasks</h3>
-                                <ul id="daily-tasks-${week}" class="text-gray-600" draggable="true">${weekData.tasks.daily.map((task, i) => `
-                                    <li data-type="daily" data-index="${i}">
-                                        <input type="checkbox" class="task-checkbox mr-2 w-4 h-4 text-[#E42642] border-gray-300 rounded-sm focus:ring-[#E42642]" ${task.completed ? 'checked' : ''}>
-                                        <span class="${task.completed ? 'completed' : ''}">${task.text}</span>
-                                    </li>
-                                `).join('')}</ul>
-                            </div>
-                            <div class="task-card bg-white p-6 rounded-xl shadow-sm">
-                                <h3 class="text-xl font-semibold text-gray-800 mb-3">Weekly Tasks</h3>
-                                <ul id="weekly-tasks-${week}" class="text-gray-600" draggable="true">${weekData.tasks.weekly.map((task, i) => `
-                                    <li data-type="weekly" data-index="${i}">
-                                        <input type="checkbox" class="task-checkbox mr-2 w-4 h-4 text-[#E42642] border-gray-300 rounded-sm focus:ring-[#E42642]" ${task.completed ? 'checked' : ''}>
-                                        <span class="${task.completed ? 'completed' : ''}">${task.text}</span>
-                                    </li>
-                                `).join('')}</ul>
-                            </div>
-                            ${monthlyTasksHtml}
-                        </div>
                     </section>
                 `;
-
-                // Add drag-and-drop for sorting tasks
-                ['daily', 'weekly', 'monthly'].forEach(type => {
-                    const ul = document.getElementById(`${type}-tasks-${week}`);
-                    if (ul) {
-                        ul.addEventListener('dragstart', (e) => {
-                            e.dataTransfer.setData('text/plain', '');
-                            e.target.closest('li').classList.add('opacity-50');
-                        });
-                        ul.addEventListener('dragend', (e) => {
-                            e.target.closest('li').classList.remove('opacity-50');
-                        });
-                        ul.addEventListener('dragover', (e) => e.preventDefault());
-                        ul.addEventListener('drop', (e) => {
-                            e.preventDefault();
-                            const draggedLi = document.querySelector('.opacity-50');
-                            if (draggedLi) {
-                                ul.insertBefore(draggedLi, e.target.closest('li'));
-                                // Update data order
-                                const newOrder = Array.from(ul.children).map(li => plannerData[week].tasks[type][li.dataset.index]);
-                                plannerData[week].tasks[type] = newOrder;
-                                saveData(STORAGE_KEYS.PLANNER, plannerData);
-                                renderWeekContent(week); // Re-render to update indices
-                            }
-                        });
-                    }
-                });
             };
 
             const renderDeadlineList = () => {
@@ -423,18 +309,15 @@
                     deadlineList.innerHTML = '<li class="p-4 bg-gray-100 rounded-lg text-gray-500">No deadlines added yet.</li>';
                     return;
                 }
-                const today = new Date().setHours(0, 0, 0, 0);
-                deadlines.forEach((deadline, idx) => {
-                    const deadlineDate = new Date(deadline.date).setHours(0, 0, 0, 0);
-                    const isOverdue = deadlineDate < today;
+                deadlines.forEach(deadline => {
                     const li = document.createElement('li');
-                    li.className = `p-4 bg-gray-100 rounded-lg flex items-center justify-between ${isOverdue ? 'overdue' : ''}`;
+                    li.className = 'p-4 bg-gray-100 rounded-lg flex items-center justify-between';
                     li.innerHTML = `
                         <div>
-                            <span class="font-semibold text-gray-700">${new Date(deadline.date + 'T00:00:00').toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })}:</span>
-                            <span class="text-gray-600"> ${deadline.task} - ${deadline.client}</span>
+                           <span class="font-semibold text-gray-700">${new Date(deadline.date + 'T00:00:00').toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })}:</span>
+                           <span class="text-gray-600"> ${deadline.task} - ${deadline.client}</span>
                         </div>
-                        <button data-index="${idx}" class="remove-deadline text-red-400 hover:text-red-600 font-bold text-xl cursor-pointer">&times;</button>
+                        <button class="remove-deadline text-red-400 hover:text-red-600 font-bold text-xl cursor-pointer">&times;</button>
                     `;
                     deadlineList.appendChild(li);
                 });
@@ -453,10 +336,10 @@
                         <td class="p-4 py-3 align-top">${client.company}</td>
                         <td class="p-4 py-3 align-top">${client.services}</td>
                         <td class="p-4 py-3 align-top text-center">
-                            <input data-index="${client.__idx}" type="checkbox" class="w-4 h-4 text-[#E42642] border-gray-300 rounded-sm focus:ring-[#E42642] bg-gray-100 client-complete-checkbox" ${client.complete ? 'checked' : ''}>
+                            <input type="checkbox" class="w-4 h-4 text-[#E42642] border-gray-300 rounded-sm focus:ring-[#E42642] bg-gray-100 client-complete-checkbox" ${client.complete ? 'checked' : ''}>
                         </td>
                         <td class="p-4 py-3 align-top text-center">
-                            <button data-index="${client.__idx}" class="remove-client-btn text-red-400 hover:text-red-600 font-bold text-xl cursor-pointer">&times;</button>
+                            <button class="remove-client-btn text-red-400 hover:text-red-600 font-bold text-xl cursor-pointer">&times;</button>
                         </td>
                     `;
                     clientTableBody.appendChild(row);
@@ -464,12 +347,11 @@
             };
             
             const filterAndRenderClients = () => {
-                const mapped = clientData.map((c, i) => ({ ...c, __idx: i }));
-                let filteredData = [...mapped];
+                let filteredData = [...clientData]; // Create a copy to avoid modifying the original array directly
                 if (currentFilter === 'complete') {
-                    filteredData = mapped.filter(client => client.complete);
+                    filteredData = clientData.filter(client => client.complete);
                 } else if (currentFilter === 'incomplete') {
-                    filteredData = mapped.filter(client => !client.complete);
+                    filteredData = clientData.filter(client => !client.complete);
                 }
                 renderClientTable(filteredData);
             };
@@ -485,20 +367,8 @@
                     e.target.classList.add('active');
                     
                     renderWeekContent(week);
-                    activeWeek = parseInt(week);
-                    saveData(STORAGE_KEYS.ACTIVE_WEEK, activeWeek);
-                }
-            });
-
-            // Task Checkbox Change
-            contentContainer.addEventListener('change', (e) => {
-                if (e.target.classList.contains('task-checkbox')) {
-                    const li = e.target.closest('li');
-                    const type = li.dataset.type;
-                    const index = parseInt(li.dataset.index);
-                    plannerData[activeWeek].tasks[type][index].completed = e.target.checked;
-                    saveData(STORAGE_KEYS.PLANNER, plannerData);
-                    renderWeekContent(activeWeek); // Re-render to update progress and styles
+                    activeWeek = parseInt(week); // Update active week
+                    saveData(STORAGE_KEYS.ACTIVE_WEEK, activeWeek); // Save active week
                 }
             });
 
@@ -515,10 +385,10 @@
                 const client = clientInput.value.trim();
                 
                 if (date && task && client) {
-                    deadlines.push({ date, task, client });
-                    deadlines.sort((a, b) => new Date(a.date) - new Date(b.date));
-                    renderDeadlineList();
-                    saveData(STORAGE_KEYS.DEADLINES, deadlines);
+                    deadlines.push({ date, task, client }); // Add to array
+                    deadlines.sort((a, b) => new Date(a.date) - new Date(b.date)); // Sort by date
+                    renderDeadlineList(); // Re-render the list
+                    saveData(STORAGE_KEYS.DEADLINES, deadlines); // Save to localStorage
 
                     dateInput.value = '';
                     taskInput.value = '';
@@ -529,15 +399,18 @@
             // Remove Deadline
             deadlineList.addEventListener('click', (e) => {
                 if (e.target.classList.contains('remove-deadline')) {
-                    const indexAttr = e.target.getAttribute('data-index');
-                    if (indexAttr !== null) {
-                        const idx = parseInt(indexAttr, 10);
-                        if (!Number.isNaN(idx) && idx >= 0 && idx < deadlines.length) {
-                            deadlines.splice(idx, 1);
-                            saveData(STORAGE_KEYS.DEADLINES, deadlines);
-                            renderDeadlineList();
-                        }
-                    }
+                    const listItem = e.target.closest('li');
+                    const dateText = listItem.querySelector('span:first-child').textContent;
+                    const taskText = listItem.querySelector('span:nth-child(2)').textContent.split(' - ')[0];
+                    const clientText = listItem.querySelector('span:nth-child(2)').textContent.split(' - ')[1];
+                    
+                    deadlines = deadlines.filter(d => {
+                        const formattedDate = new Date(d.date + 'T00:00:00').toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
+                        return !(formattedDate === dateText && d.task === taskText && d.client === clientText);
+                    });
+
+                    renderDeadlineList();
+                    saveData(STORAGE_KEYS.DEADLINES, deadlines); // Save updated list
                 }
             });
             
@@ -568,19 +441,21 @@
                     clientData.push(newClient);
                     filterAndRenderClients();
                     addClientModal.classList.add('hidden');
-                    saveData(STORAGE_KEYS.CLIENTS, clientData);
+                    saveData(STORAGE_KEYS.CLIENTS, clientData); // Save clients
                 }
             });
 
             // Handle Client Checkbox Change
             clientTableBody.addEventListener('change', (e) => {
                 if (e.target.classList.contains('client-complete-checkbox')) {
-                    const idxAttr = e.target.getAttribute('data-index');
-                    const idx = idxAttr !== null ? parseInt(idxAttr, 10) : -1;
-                    if (!Number.isNaN(idx) && clientData[idx]) {
-                        clientData[idx].complete = e.target.checked;
-                        filterAndRenderClients();
-                        saveData(STORAGE_KEYS.CLIENTS, clientData);
+                    const row = e.target.closest('tr');
+                    const companyName = row.children[0].textContent;
+                    const client = clientData.find(c => c.company === companyName);
+                    if (client) {
+                        client.complete = e.target.checked;
+                        row.classList.toggle('completed', e.target.checked);
+                        filterAndRenderClients(); // Re-render to ensure filtering is still accurate
+                        saveData(STORAGE_KEYS.CLIENTS, clientData); // Save clients
                     }
                 }
             });
@@ -588,13 +463,15 @@
             // Remove Client Button Click
             clientTableBody.addEventListener('click', (e) => {
                 if (e.target.classList.contains('remove-client-btn')) {
-                    const idxAttr = e.target.getAttribute('data-index');
-                    const idx = idxAttr !== null ? parseInt(idxAttr, 10) : -1;
-                    if (!Number.isNaN(idx) && idx >= 0 && idx < clientData.length) {
-                        lastRemovedClient = clientData.splice(idx, 1)[0];
+                    const row = e.target.closest('tr');
+                    const companyName = row.children[0].textContent;
+                    const clientIndex = clientData.findIndex(c => c.company === companyName);
+                    
+                    if (clientIndex !== -1) {
+                        lastRemovedClient = clientData.splice(clientIndex, 1)[0]; // Remove and store
                         filterAndRenderClients();
                         undoBtn.classList.remove('hidden');
-                        saveData(STORAGE_KEYS.CLIENTS, clientData);
+                        saveData(STORAGE_KEYS.CLIENTS, clientData); // Save clients
                     }
                 }
             });
@@ -602,11 +479,11 @@
             // Undo Remove Client
             undoBtn.addEventListener('click', () => {
                 if (lastRemovedClient) {
-                    clientData.push(lastRemovedClient);
+                    clientData.push(lastRemovedClient); // Add back
                     filterAndRenderClients();
                     lastRemovedClient = null;
                     undoBtn.classList.add('hidden');
-                    saveData(STORAGE_KEYS.CLIENTS, clientData);
+                    saveData(STORAGE_KEYS.CLIENTS, clientData); // Save clients
                 }
             });
 
@@ -624,7 +501,7 @@
                     sortDirection[sortKey] = direction;
                     
                     clientData.sort((a, b) => {
-                        const aValue = String(a[sortKey]).toLowerCase();
+                        const aValue = String(a[sortKey]).toLowerCase(); // Ensure string comparison
                         const bValue = String(b[sortKey]).toLowerCase();
                         if (aValue < bValue) return direction === 'asc' ? -1 : 1;
                         if (aValue > bValue) return direction === 'asc' ? 1 : -1;
@@ -636,10 +513,9 @@
             });
 
             // --- Initial Render ---
-            renderWeekContent(activeWeek);
-            document.querySelector(`[data-week="${activeWeek}"]`).classList.add('active');
-            renderDeadlineList();
-            filterAndRenderClients();
+            renderWeekContent(activeWeek); // Render the initially active week
+            renderDeadlineList(); // Load and display deadlines
+            filterAndRenderClients(); // Load and display clients
         });
     </script>
 </body>
