@@ -309,7 +309,8 @@
                     deadlineList.innerHTML = '<li class="p-4 bg-gray-100 rounded-lg text-gray-500">No deadlines added yet.</li>';
                     return;
                 }
-                deadlines.forEach(deadline => {
+                // render with index so removal can target array index
+                deadlines.forEach((deadline, idx) => {
                     const li = document.createElement('li');
                     li.className = 'p-4 bg-gray-100 rounded-lg flex items-center justify-between';
                     li.innerHTML = `
@@ -317,29 +318,31 @@
                            <span class="font-semibold text-gray-700">${new Date(deadline.date + 'T00:00:00').toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })}:</span>
                            <span class="text-gray-600"> ${deadline.task} - ${deadline.client}</span>
                         </div>
-                        <button class="remove-deadline text-red-400 hover:text-red-600 font-bold text-xl cursor-pointer">&times;</button>
+                        <button data-index="${idx}" class="remove-deadline text-red-400 hover:text-red-600 font-bold text-xl cursor-pointer">&times;</button>
                     `;
                     deadlineList.appendChild(li);
                 });
             };
 
             const renderClientTable = (data) => {
+                // data is expected to be an array of client objects that include an __idx property
                 clientTableBody.innerHTML = '';
                 if (data.length === 0) {
                     clientTableBody.innerHTML = '<tr><td colspan="4" class="p-4 text-center text-gray-500">No clients found.</td></tr>';
                     return;
                 }
                 data.forEach(client => {
+                    // client.__idx is the index in clientData
                     const row = document.createElement('tr');
                     row.className = `border-b border-gray-200 ${client.complete ? 'completed' : ''}`;
                     row.innerHTML = `
                         <td class="p-4 py-3 align-top">${client.company}</td>
                         <td class="p-4 py-3 align-top">${client.services}</td>
                         <td class="p-4 py-3 align-top text-center">
-                            <input type="checkbox" class="w-4 h-4 text-[#E42642] border-gray-300 rounded-sm focus:ring-[#E42642] bg-gray-100 client-complete-checkbox" ${client.complete ? 'checked' : ''}>
+                            <input data-index="${client.__idx}" type="checkbox" class="w-4 h-4 text-[#E42642] border-gray-300 rounded-sm focus:ring-[#E42642] bg-gray-100 client-complete-checkbox" ${client.complete ? 'checked' : ''}>
                         </td>
                         <td class="p-4 py-3 align-top text-center">
-                            <button class="remove-client-btn text-red-400 hover:text-red-600 font-bold text-xl cursor-pointer">&times;</button>
+                            <button data-index="${client.__idx}" class="remove-client-btn text-red-400 hover:text-red-600 font-bold text-xl cursor-pointer">&times;</button>
                         </td>
                     `;
                     clientTableBody.appendChild(row);
@@ -347,11 +350,13 @@
             };
             
             const filterAndRenderClients = () => {
-                let filteredData = [...clientData]; // Create a copy to avoid modifying the original array directly
+                // map clientData to include original index so renderClientTable can reference it
+                const mapped = clientData.map((c, i) => ({ ...c, __idx: i }));
+                let filteredData = [...mapped]; // copy
                 if (currentFilter === 'complete') {
-                    filteredData = clientData.filter(client => client.complete);
+                    filteredData = mapped.filter(client => client.complete);
                 } else if (currentFilter === 'incomplete') {
-                    filteredData = clientData.filter(client => !client.complete);
+                    filteredData = mapped.filter(client => !client.complete);
                 }
                 renderClientTable(filteredData);
             };
@@ -399,18 +404,15 @@
             // Remove Deadline
             deadlineList.addEventListener('click', (e) => {
                 if (e.target.classList.contains('remove-deadline')) {
-                    const listItem = e.target.closest('li');
-                    const dateText = listItem.querySelector('span:first-child').textContent;
-                    const taskText = listItem.querySelector('span:nth-child(2)').textContent.split(' - ')[0];
-                    const clientText = listItem.querySelector('span:nth-child(2)').textContent.split(' - ')[1];
-                    
-                    deadlines = deadlines.filter(d => {
-                        const formattedDate = new Date(d.date + 'T00:00:00').toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
-                        return !(formattedDate === dateText && d.task === taskText && d.client === clientText);
-                    });
-
-                    renderDeadlineList();
-                    saveData(STORAGE_KEYS.DEADLINES, deadlines); // Save updated list
+                    const indexAttr = e.target.getAttribute('data-index');
+                    if (indexAttr !== null) {
+                        const idx = parseInt(indexAttr, 10);
+                        if (!Number.isNaN(idx) && idx >= 0 && idx < deadlines.length) {
+                            deadlines.splice(idx, 1);
+                            saveData(STORAGE_KEYS.DEADLINES, deadlines); // Save updated list
+                            renderDeadlineList();
+                        }
+                    }
                 }
             });
             
@@ -445,30 +447,27 @@
                 }
             });
 
-            // Handle Client Checkbox Change
+            // Handle Client Checkbox Change (use data-index to update clientData directly)
             clientTableBody.addEventListener('change', (e) => {
                 if (e.target.classList.contains('client-complete-checkbox')) {
-                    const row = e.target.closest('tr');
-                    const companyName = row.children[0].textContent;
-                    const client = clientData.find(c => c.company === companyName);
-                    if (client) {
-                        client.complete = e.target.checked;
-                        row.classList.toggle('completed', e.target.checked);
+                    const idxAttr = e.target.getAttribute('data-index');
+                    const idx = idxAttr !== null ? parseInt(idxAttr, 10) : -1;
+                    if (!Number.isNaN(idx) && clientData[idx]) {
+                        clientData[idx].complete = e.target.checked;
+                        // No need to derive client by name anymore
                         filterAndRenderClients(); // Re-render to ensure filtering is still accurate
                         saveData(STORAGE_KEYS.CLIENTS, clientData); // Save clients
                     }
                 }
             });
             
-            // Remove Client Button Click
+            // Remove Client Button Click (use data-index to remove from clientData)
             clientTableBody.addEventListener('click', (e) => {
                 if (e.target.classList.contains('remove-client-btn')) {
-                    const row = e.target.closest('tr');
-                    const companyName = row.children[0].textContent;
-                    const clientIndex = clientData.findIndex(c => c.company === companyName);
-                    
-                    if (clientIndex !== -1) {
-                        lastRemovedClient = clientData.splice(clientIndex, 1)[0]; // Remove and store
+                    const idxAttr = e.target.getAttribute('data-index');
+                    const idx = idxAttr !== null ? parseInt(idxAttr, 10) : -1;
+                    if (!Number.isNaN(idx) && idx >= 0 && idx < clientData.length) {
+                        lastRemovedClient = clientData.splice(idx, 1)[0]; // Remove and store
                         filterAndRenderClients();
                         undoBtn.classList.remove('hidden');
                         saveData(STORAGE_KEYS.CLIENTS, clientData); // Save clients
