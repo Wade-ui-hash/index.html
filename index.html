@@ -370,4 +370,29 @@
         });
     </script>
 </body>
+    <script type="module">
+  // Import the functions you need from the SDKs you need
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
+  import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-analytics.js";
+  // TODO: Add SDKs for Firebase products that you want to use
+  // https://firebase.google.com/docs/web/setup#available-libraries
+
+  // Your web app's Firebase configuration
+  // For Firebase JS SDK v7.20.0 and later, measurementId is optional
+  const firebaseConfig = {
+    apiKey: "AIzaSyA6rjz8kOxMLJVMJdsTL30LbixXC99DuXY",
+    authDomain: "monthly-planner-3fdc6.firebaseapp.com",
+    projectId: "monthly-planner-3fdc6",
+    storageBucket: "monthly-planner-3fdc6.firebasestorage.app",
+    messagingSenderId: "120938507489",
+    appId: "1:120938507489:web:5ae7735317ad1ff22fdba0",
+    measurementId: "G-N7CQZZZN94"
+  };
+
+  // Initialize Firebase
+  const app = initializeApp(firebaseConfig);
+  const analytics = getAnalytics(app);
+</script>
+    </body>
 </html>
+
