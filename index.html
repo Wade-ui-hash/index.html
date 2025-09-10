@@ -8,7 +8,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root{
-            --bg-color:#E5E4E2;
+            --bg-color:#F5F5F5;
             --text-color:#333333;
             --card-bg:#FFFFFF;
             --accent-color:#E42642;
@@ -59,6 +59,7 @@
         <!-- Header: centered heading + top-right music button -->
         <header class="text-center mb-8 relative">
             <h1 class="text-4xl font-bold text-gray-800">Monthly Work Planner</h1>
+            <p class="text-lg text-gray-600 mt-2 w-full">A dynamic and interactive schedule to keep you organized.</p>
 
             <!-- Music button placed top-right -->
             <div class="music-top-right absolute right-0 top-0">
@@ -984,8 +985,9 @@
                 saveData(STORAGE_KEYS.MUSIC, musicGenres);
                 renderGenres();
             } else if (e.target.classList.contains('edit-genre-btn')) {
-                // open in-place edit UI
+                // open inline edit UI
                 const g = musicGenres[idx];
+                // create edit container
                 const editDiv = document.createElement('div');
                 editDiv.className = 'grid grid-cols-1 md:grid-cols-3 gap-2 w-full';
                 editDiv.innerHTML = `
@@ -996,23 +998,28 @@
                         <button class="cancel-genre-edit-btn bg-gray-200 text-black py-1 px-3 rounded-md">Cancel</button>
                     </div>
                 `;
-                // replace the row content temporarily
+                // replace row contents with editDiv
                 row.innerHTML = '';
                 row.appendChild(editDiv);
 
-                // save/cancel handlers (delegated on the editDiv)
-                editDiv.addEventListener('click', function handler(ev){
-                    if (ev.target.classList.contains('save-genre-btn')) {
-                        const newName = editDiv.querySelector('.edit-genre-name').value.trim();
-                        const newUrl = editDiv.querySelector('.edit-genre-url').value.trim();
-                        if (!newName) { alert('Name cannot be empty'); return; }
-                        musicGenres[idx] = { name: newName, url: newUrl || `https://www.youtube.com/results?search_query=${encodeURIComponent(newName)}` };
-                        saveData(STORAGE_KEYS.MUSIC, musicGenres);
-                        renderGenres();
-                    } else if (ev.target.classList.contains('cancel-genre-edit-btn')) {
-                        renderGenres();
-                    }
-                }, { once: true });
+                // Now wire save/cancel buttons explicitly
+                const saveBtn = editDiv.querySelector('.save-genre-btn');
+                const cancelBtn = editDiv.querySelector('.cancel-genre-edit-btn');
+                const nameInput = editDiv.querySelector('.edit-genre-name');
+                const urlInput = editDiv.querySelector('.edit-genre-url');
+
+                saveBtn.addEventListener('click', () => {
+                    const newName = nameInput.value.trim();
+                    const newUrl = urlInput.value.trim();
+                    if (!newName) { alert('Name cannot be empty'); nameInput.focus(); return; }
+                    musicGenres[idx] = { name: newName, url: newUrl || `https://www.youtube.com/results?search_query=${encodeURIComponent(newName)}` };
+                    saveData(STORAGE_KEYS.MUSIC, musicGenres);
+                    renderGenres();
+                });
+
+                cancelBtn.addEventListener('click', () => {
+                    renderGenres();
+                });
             }
         });
 
@@ -1038,9 +1045,3 @@
     </script>
 </body>
 </html>
-
-
-
-
-
-
