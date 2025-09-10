@@ -1,1041 +1,1070 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>Interactive Monthly Planner</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <style>
-        :root{
-            --bg-color:#F5F5F5;
-            --text-color:#333333;
-            --card-bg:#FFFFFF;
-            --accent-color:#E42642;
-            --completed-color:#B5B5B5;
-            --overdue-color:#E42642;
-            --progress-bg:#e5e7eb;
-            --progress-fill:#10b981;
-        }
-        body{font-family:'Inter',sans-serif;background-color:var(--bg-color);color:var(--text-color)}
-        .nav-btn{transition:all .3s ease}
-        .nav-btn.active{background-color:var(--accent-color);color:#fff;font-weight:600}
-        .task-card ul{list-style:none;padding:0;margin:0}
-        .task-card ul li{display:flex;align-items:center;margin-bottom:.5rem;cursor:grab}
-        .task-card ul li:active{cursor:grabbing}
-        .completed{text-decoration:line-through;color:var(--completed-color)}
-        .sortable-header{cursor:pointer;user-select:none}
-        .modal{display:none;position:fixed;z-index:1000;left:0;top:0;width:100%;height:100%;overflow:auto;background-color:rgba(0,0,0,.5);align-items:center;justify-content:center}
-        .modal-content{background-color:var(--card-bg);padding:24px;border-radius:.75rem;box-shadow:0 4px 6px rgba(0,0,0,.1);max-width:680px;width:94%}
-        .close-btn{color:#aaa;float:right;font-size:28px;font-weight:bold}
-        .close-btn:hover,.close-btn:focus{color:var(--text-color);text-decoration:none;cursor:pointer}
-        .overdue{color:var(--overdue-color);font-weight:bold}
-        .progress-bar{background-color:var(--progress-bg);height:8px;border-radius:9999px;overflow:hidden}
-        .progress-fill{background-color:var(--progress-fill);height:100%;transition:width .3s ease}
-        .error-message{color:#E42642;font-size:.875rem;margin-top:.25rem}
-        [role="tab"]:focus{outline:2px solid var(--accent-color)}
-        /* card header & edit button */
-        .card-header{display:flex;align-items:center;justify-content:space-between;gap:8px}
-        .edit-tasks-btn{background:transparent;border:1px solid rgba(0,0,0,.08);padding:6px 10px;border-radius:8px;font-size:.875rem;cursor:pointer}
-        .edit-tasks-btn:hover{background:rgba(0,0,0,.03)}
-        .task-edit-list{max-height:320px;overflow:auto;margin-bottom:12px}
-        .task-edit-item{display:flex;gap:8px;align-items:center;margin-bottom:8px}
-        .music-btn{background:var(--accent-color);color:#fff;padding:.5rem .75rem;border-radius:.6rem;font-weight:600;display:inline-flex;align-items:center;gap:.5rem;border:none;cursor:pointer}
-        .music-btn:hover{opacity:.95}
-        .music-top-right{position:absolute;right:0;top:0}
-        header.relative{position:relative}
-        /* music modal specific */
-        .genre-row{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px;border-radius:8px}
-        .genre-actions button{margin-left:6px}
-        .small-muted{font-size:.875rem;color:#6b7280}
-        /* responsive small tune */
-        @media (max-width:640px){
-            .music-top-right{position:static;margin-top:.5rem}
-        }
-    </style>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Interactive Monthly Planner</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root{
+            --bg-color:#F5F5F5;
+            --text-color:#333333;
+            --card-bg:#FFFFFF;
+            --accent-color:#E42642;
+            --completed-color:#B5B5B5;
+            --overdue-color:#E42642;
+            --progress-bg:#e5e7eb;
+            --progress-fill:#10b981;
+        }
+        body{font-family:'Inter',sans-serif;background-color:var(--bg-color);color:var(--text-color)}
+        .nav-btn{transition:all .3s ease}
+        .nav-btn.active{background-color:var(--accent-color);color:#fff;font-weight:600}
+        .task-card ul{list-style:none;padding:0;margin:0}
+        .task-card ul li{display:flex;align-items:center;margin-bottom:.5rem;cursor:grab}
+        .task-card ul li:active{cursor:grabbing}
+        .completed{text-decoration:line-through;color:var(--completed-color)}
+        .sortable-header{cursor:pointer;user-select:none}
+        .modal{display:none;position:fixed;z-index:1000;left:0;top:0;width:100%;height:100%;overflow:auto;background-color:rgba(0,0,0,.5);align-items:center;justify-content:center}
+        .modal-content{background-color:var(--card-bg);padding:24px;border-radius:.75rem;box-shadow:0 4px 6px rgba(0,0,0,.1);max-width:680px;width:94%}
+        .close-btn{color:#aaa;float:right;font-size:28px;font-weight:bold}
+        .close-btn:hover,.close-btn:focus{color:var(--text-color);text-decoration:none;cursor:pointer}
+        .overdue{color:var(--overdue-color);font-weight:bold}
+        .progress-bar{background-color:var(--progress-bg);height:8px;border-radius:9999px;overflow:hidden}
+        .progress-fill{background-color:var(--progress-fill);height:100%;transition:width .3s ease}
+        .error-message{color:#E42642;font-size:.875rem;margin-top:.25rem}
+        [role="tab"]:focus{outline:2px solid var(--accent-color)}
+        /* card header & edit button */
+        .card-header{display:flex;align-items:center;justify-content:space-between;gap:8px}
+        .edit-tasks-btn{background:transparent;border:1px solid rgba(0,0,0,.08);padding:6px 10px;border-radius:8px;font-size:.875rem;cursor:pointer}
+        .edit-tasks-btn:hover{background:rgba(0,0,0,.03)}
+        .task-edit-list{max-height:320px;overflow:auto;margin-bottom:12px}
+        .task-edit-item{display:flex;gap:8px;align-items:center;margin-bottom:8px}
+        .music-btn{background:var(--accent-color);color:#fff;padding:.5rem .75rem;border-radius:.6rem;font-weight:600;display:inline-flex;align-items:center;gap:.5rem;border:none;cursor:pointer}
+        .music-btn:hover{opacity:.95}
+        .music-top-right{position:absolute;right:0;top:0}
+        header.relative{position:relative}
+        /* music modal specific */
+        .genre-row{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px;border-radius:8px}
+        .genre-actions button{margin-left:6px}
+        .small-muted{font-size:.875rem;color:#6b7280}
+        /* responsive small tune */
+        @media (max-width:640px){
+            .music-top-right{position:static;margin-top:.5rem}
+        }
+    </style>
 </head>
 <body class="antialiased text-gray-900">
-    <div class="container mx-auto p-4 sm:p-6 md:p-8 max-w-7xl">
-        <!-- Header: centered heading + top-right music button -->
-        <header class="text-center mb-8 relative">
-            <h1 class="text-4xl font-bold text-gray-800">Monthly Work Planner</h1>
-            <p class="text-lg text-gray-600 mt-2 w-full">A dynamic and interactive schedule to keep you organized.</p>
-
-            <!-- Music button placed top-right -->
-            <div class="music-top-right absolute right-0 top-0">
-                <button id="musicBtn" class="music-btn mr-2" title="Open Music genres">🎵 Music</button>
-            </div>
-        </header>
-
-        <main>
-            <!-- Month navigation -->
-            <nav id="month-navigation" class="flex justify-center items-center bg-white rounded-xl shadow-sm p-2 mb-4">
-                <button id="prev-month" class="nav-btn px-4 py-2 text-gray-700">&lt; Prev</button>
-                <span id="current-month" class="px-4 py-2 font-semibold"></span>
-                <button id="next-month" class="nav-btn px-4 py-2 text-gray-700">Next &gt;</button>
-            </nav>
-
-            <!-- Week navigation -->
-            <nav id="week-navigation" role="tablist" class="flex justify-center items-center bg-white rounded-xl shadow-sm p-2 mb-8"></nav>
-
-            <!-- Monthly progress -->
-            <div id="monthly-progress" class="mb-8 bg-white p-6 rounded-xl shadow-sm">
-                <h2 class="text-2xl font-bold text-gray-800 mb-4">Monthly Progress</h2>
-                <div class="progress-bar mb-2"><div id="monthly-progress-fill" class="progress-fill" style="width:0%"></div></div>
-                <p id="monthly-progress-text" class="text-sm text-gray-600 text-center">0% Complete</p>
-            </div>
-
-            <!-- Planner content -->
-            <div id="planner-content"></div>
-
-            <!-- Deadlines section -->
-            <section id="deadlines-section" class="mt-10 bg-white p-6 rounded-xl shadow-sm">
-                <h2 class="text-2xl font-bold text-gray-800 mb-4 border-b-2 border-gray-200 pb-2">Upcoming Deadlines</h2>
-                <p class="text-gray-600 mb-6">Use this section to track specific deadlines for projects and tasks. Add new deadlines using the form below.</p>
-                <ul id="deadline-list" class="space-y-3 mb-8"></ul>
-                <div class="mt-6">
-                    <h3 class="text-xl font-semibold text-gray-800 mb-3">Add a New Deadline</h3>
-                    <form id="add-deadline-form" class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
-                        <div class="md:col-span-1">
-                            <label for="deadline-date" class="block text-sm font-medium text-gray-700">Date</label>
-                            <input id="deadline-date" type="date" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 bg-white text-gray-900">
-                            <p id="deadline-date-error" class="error-message hidden">Please select a date.</p>
-                        </div>
-                        <div class="md:col-span-2">
-                            <label for="deadline-task" class="block text-sm font-medium text-gray-700">Project/Task Name</label>
-                            <input id="deadline-task" type="text" placeholder="e.g., Finalize Q3 Report" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 bg-white text-gray-900">
-                            <p id="deadline-task-error" class="error-message hidden">Please enter a task name.</p>
-                        </div>
-                        <div class="md:col-span-1">
-                            <label for="deadline-client" class="block text-sm font-medium text-gray-700">Client</label>
-                            <input id="deadline-client" type="text" placeholder="e.g., Client Inc." required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 bg-white text-gray-900">
-                            <p id="deadline-client-error" class="error-message hidden">Please enter a client.</p>
-                        </div>
-                        <button type="submit" class="w-full md:w-auto md:col-start-4 bg-[#E42642] text-white font-semibold py-2 px-6 rounded-lg hover:bg-opacity-90 transition-colors">Add Deadline</button>
-                    </form>
-                </div>
-            </section>
-
-            <!-- Clients section -->
-            <section id="clients-section" class="mt-10 bg-white p-6 rounded-xl shadow-sm">
-                <h2 class="text-2xl font-bold text-gray-800 mb-4 border-b-2 border-gray-200 pb-2">Active Clients</h2>
-                <div class="flex justify-between items-center mb-4">
-                    <div class="flex items-center gap-2">
-                        <label for="filter-clients" class="text-sm font-medium text-gray-700">Filter by:</label>
-                        <select id="filter-clients" class="bg-white text-gray-900 rounded-md border-gray-300 shadow-sm p-2 text-sm">
-                            <option value="all">All</option>
-                            <option value="incomplete">Incomplete</option>
-                            <option value="complete">Complete</option>
-                        </select>
-                    </div>
-                    <div class="flex justify-end gap-2">
-                        <button id="undo-client-btn" class="bg-gray-200 text-gray-600 font-semibold py-2 px-6 rounded-lg hidden">Undo Remove</button>
-                        <button id="add-client-btn" class="bg-[#E42642] text-white font-semibold py-2 px-6 rounded-lg">Add New Client</button>
-                    </div>
-                </div>
-                <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200">
-                        <thead>
-                            <tr>
-                                <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider sortable-header" data-sort-key="company">Company</th>
-                                <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider sortable-header" data-sort-key="services">Services</th>
-                                <th class="px-4 py-3 text-center text-sm font-semibold text-gray-700 uppercase tracking-wider">Complete</th>
-                                <th class="px-4 py-3 text-center text-sm font-semibold text-gray-700 uppercase tracking-wider">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="client-table-body" class="bg-white divide-y divide-gray-200"></tbody>
-                    </table>
-                </div>
-            </section>
-        </main>
-    </div>
-
-    <!-- Add Client Modal -->
-    <div id="add-client-modal" class="modal">
-        <div class="modal-content p-6 rounded-xl shadow-lg">
-            <span id="close-modal-btn" class="close-btn">&times;</span>
-            <h3 class="text-xl font-semibold text-gray-800 mb-4">Add New Client</h3>
-            <form id="new-client-form" class="space-y-4">
-                <div>
-                    <label for="new-client-company" class="block text-sm font-medium text-gray-700">Company</label>
-                    <input id="new-client-company" type="text" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 bg-white text-gray-900">
-                    <p id="new-client-company-error" class="error-message hidden">Please enter a company name.</p>
-                </div>
-                <div>
-                    <label for="new-client-services" class="block text-sm font-medium text-gray-700">Services</label>
-                    <input id="new-client-services" type="text" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 bg-white text-gray-900">
-                    <p id="new-client-services-error" class="error-message hidden">Please enter services.</p>
-                </div>
-                <div class="flex justify-end gap-2 mt-4">
-                    <button id="cancel-new-client-btn" type="button" class="bg-gray-200 text-gray-800 font-semibold py-2 px-6 rounded-lg">Cancel</button>
-                    <button id="confirm-new-client-btn" type="submit" class="bg-[#E42642] text-white font-semibold py-2 px-6 rounded-lg">Confirm</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- Task Editor Modal -->
-    <div id="task-edit-modal" class="modal">
-        <div class="modal-content">
-            <span id="task-edit-close" class="close-btn">&times;</span>
-            <h3 id="task-edit-title" class="text-xl font-semibold mb-3">Edit Tasks</h3>
-            <div id="task-edit-list" class="task-edit-list mb-3"></div>
-
-            <div class="flex gap-2 items-center mb-3">
-                <input id="new-task-text" type="text" placeholder="New task description" class="w-full rounded-md border-gray-300 p-2">
-                <select id="new-task-priority" class="rounded-md border-gray-300 p-2">
-                    <option value="low">Low</option>
-                    <option value="medium" selected>Medium</option>
-                    <option value="high">High</option>
-                </select>
-                <button id="add-new-task-btn" class="bg-[#E42642] text-white py-2 px-4 rounded-md">Add</button>
-            </div>
-
-            <div class="flex justify-end gap-2">
-                <button id="task-edit-cancel" class="bg-gray-200 text-gray-800 py-2 px-4 rounded-md">Cancel</button>
-                <button id="task-edit-save" class="bg-[#10b981] text-white py-2 px-4 rounded-md">Save Changes</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Music Modal -->
-    <div id="music-modal" class="modal">
-        <div class="modal-content">
-            <span id="music-close" class="close-btn">&times;</span>
-            <h3 class="text-xl font-semibold mb-3">Music Genres</h3>
-            <p class="small-muted mb-3">Click a genre to open YouTube. Use edit/delete to manage your list. Changes saved automatically.</p>
-            <div id="genres-list" class="space-y-2 mb-4"></div>
-
-            <h4 class="font-semibold mb-2">Add new genre</h4>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-2 mb-4">
-                <input id="new-genre-name" type="text" placeholder="Genre (e.g., Lo-Fi Hip Hop)" class="rounded-md border-gray-300 p-2 md:col-span-2">
-                <input id="new-genre-link" type="text" placeholder="YouTube search or playlist link" class="rounded-md border-gray-300 p-2">
-                <button id="add-genre-btn" class="bg-[#E42642] text-white py-2 px-4 rounded-md md:col-span-3">Add Genre</button>
-            </div>
-            <div class="flex justify-end gap-2">
-                <button id="close-music-btn" class="bg-gray-200 text-gray-800 py-2 px-4 rounded-md">Close</button>
-            </div>
-        </div>
-    </div>
-
-    <script>
-    document.addEventListener('DOMContentLoaded', () => {
-        /* =======================
-           Storage keys
-           ======================= */
-        const STORAGE_KEYS = {
-            DEADLINES: 'monthlyPlannerDeadlines',
-            CLIENTS: 'monthlyPlannerClients',
-            ACTIVE_MONTH: 'monthlyPlannerActiveMonth',
-            ACTIVE_WEEK: 'monthlyPlannerActiveWeek',
-            PLANNER: 'monthlyPlannerData',
-            MUSIC: 'monthlyPlannerMusicGenres' // new
-        };
-
-        /* =======================
-           App state
-           ======================= */
-        let lastRemovedClient = null;
-        let sortDirection = {};
-        let currentFilter = 'all';
-        let currentDate = new Date('2025-09-09'); // kept as original; swap to new Date() if desired
-        let currentMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
-        let activeWeek = 1;
-
-        /* =======================
-           Default tasks (same as original)
-           ======================= */
-        const getDefaultTasks = (week) => {
-            const defaults = [
-                null,
-                {
-                    title: 'Content Creation Focus',
-                    tasks: {
-                        daily: [
-                            { text: 'Check CMA inbox for anything urgent.', completed: false, priority: 'medium' },
-                            { text: 'Check follow up sheet, confirm meetings and book the boardroom for any meetings.', completed: false, priority: 'high' },
-                            { text: 'Get to RMS emails', completed: false, priority: 'medium' }
-                        ],
-                        weekly: [
-                            { text: 'Keyword research for new blogs & Write Blogs. Write social media captions.', completed: false, priority: 'high' },
-                            { text: 'Put content into client folders and notify Stephanie with a deadline for the 20th.', completed: false, priority: 'medium' },
-                            { text: 'Google Ads Report (Friday)', completed: false, priority: 'high' }
-                        ],
-                        monthly: [
-                            { text: 'Create and schedule content.', completed: false, priority: 'high' },
-                            { text: 'SEO optimisation for clients.', completed: false, priority: 'medium' },
-                            { text: 'Update SEO sheets.', completed: false, priority: 'low' }
-                        ]
-                    }
-                },
-                {
-                    title: 'SEO Optimization Focus',
-                    tasks: {
-                        daily: [
-                            { text: 'Check CMA inbox for anything urgent.', completed: false, priority: 'medium' },
-                            { text: 'Check follow up sheet, confirm meetings and book the boardroom for any meetings.', completed: false, priority: 'high' },
-                            { text: 'Get to RMS emails', completed: false, priority: 'medium' }
-                        ],
-                        weekly: [
-                            { text: 'On-Page SEO keywords. Meta Descriptions. Image Alt tags.', completed: false, priority: 'high' },
-                            { text: 'Google Ads Report (Friday)', completed: false, priority: 'high' }
-                        ],
-                        monthly: []
-                    }
-                },
-                {
-                    title: 'Content Review & Reporting Focus',
-                    tasks: {
-                        daily: [
-                            { text: 'Check CMA inbox for anything urgent.', completed: false, priority: 'medium' },
-                            { text: 'Check follow up sheet, confirm meetings and book the boardroom for any meetings.', completed: false, priority: 'high' },
-                            { text: 'Get to RMS emails', completed: false, priority: 'medium' }
-                        ],
-                        weekly: [
-                            { text: 'Send out SEO report to all clients (Wednesday).', completed: false, priority: 'high' },
-                            { text: 'Mail shots (Thursday).', completed: false, priority: 'medium' },
-                            { text: 'Get content from Stephanie.', completed: false, priority: 'medium' },
-                            { text: 'Google Ads Report (Friday)', completed: false, priority: 'high' }
-                        ],
-                        monthly: []
-                    }
-                },
-                {
-                    title: 'Content Scheduling Focus',
-                    tasks: {
-                        daily: [
-                            { text: 'Check CMA inbox for anything urgent.', completed: false, priority: 'medium' },
-                            { text: 'Check follow up sheet, confirm meetings and book the boardroom for any meetings.', completed: false, priority: 'high' },
-                            { text: 'Get to RMS emails', completed: false, priority: 'medium' }
-                        ],
-                        weekly: [
-                            { text: 'Schedule content for the coming month.', completed: false, priority: 'high' },
-                            { text: 'Brainstorm ideas.', completed: false, priority: 'low' },
-                            { text: 'Google Ads Report (Friday)', completed: false, priority: 'high' }
-                        ],
-                        monthly: []
-                    }
-                }
-            ];
-            return defaults[week] || { title: `Week ${week}`, tasks: { daily: [], weekly: [], monthly: [] } };
-        };
-
-        /* =======================
-           Storage helpers
-           ======================= */
-        const loadData = (key) => {
-            const data = localStorage.getItem(key);
-            return data ? JSON.parse(data) : null;
-        };
-        const saveData = (key, data) => localStorage.setItem(key, JSON.stringify(data));
-
-        /* =======================
-           Initialize stored data
-           ======================= */
-        let plannerData = loadData(STORAGE_KEYS.PLANNER) || {};
-        const monthKeyInit = currentMonth.toISOString().slice(0,7);
-        if (!plannerData[monthKeyInit]) plannerData[monthKeyInit] = { weeks: [null, getDefaultTasks(1), getDefaultTasks(2), getDefaultTasks(3), getDefaultTasks(4)] };
-
-        let deadlines = loadData(STORAGE_KEYS.DEADLINES) || [];
-        let clientData = loadData(STORAGE_KEYS.CLIENTS) || [
-            { company: 'Prominent Roofing', services: 'Google Ads, 1 SEO blog, 4 posts', complete: false },
-            { company: 'CFO Connect', services: 'Google Ads, 1 SEO blog', complete: false },
-            { company: 'The Green Zone', services: 'Google Ads, 1 SEO blog, 8 posts', complete: false },
-            { company: 'Atzaro', services: 'Google Ads, 4 SEO blogs, 16 posts', complete: false },
-            { company: 'Landy Logic', services: 'Google Ads, 4 posts', complete: false },
-            { company: 'Absolute Ablutions', services: 'Google Ads, 2 SEO blogs', complete: false }
-        ];
-        const savedMonth = loadData(STORAGE_KEYS.ACTIVE_MONTH);
-        if (savedMonth) currentMonth = new Date(savedMonth);
-        activeWeek = parseInt(loadData(STORAGE_KEYS.ACTIVE_WEEK)) || 1;
-
-        // Music genres (load or default)
-        const defaultGenres = [
-            { name: 'Lo-Fi Hip Hop', url: 'https://www.youtube.com/results?search_query=lofi+hip+hop' },
-            { name: 'Jazz', url: 'https://www.youtube.com/results?search_query=jazz+playlist' },
-            { name: 'Classical', url: 'https://www.youtube.com/results?search_query=classical+music' },
-            { name: 'Deep House', url: 'https://www.youtube.com/results?search_query=deep+house' },
-            { name: 'Focus / Study', url: 'https://www.youtube.com/results?search_query=focus+study+music' },
-            { name: 'Rock', url: 'https://www.youtube.com/results?search_query=rock+playlist' }
-        ];
-        let musicGenres = loadData(STORAGE_KEYS.MUSIC) || defaultGenres.slice();
-
-        /* =======================
-           DOM references
-           ======================= */
-        const prevMonthBtn = document.getElementById('prev-month');
-        const nextMonthBtn = document.getElementById('next-month');
-        const currentMonthSpan = document.getElementById('current-month');
-        const navigation = document.getElementById('week-navigation');
-        const contentContainer = document.getElementById('planner-content');
-        const monthlyProgressFill = document.getElementById('monthly-progress-fill');
-        const monthlyProgressText = document.getElementById('monthly-progress-text');
-        const deadlineForm = document.getElementById('add-deadline-form');
-        const deadlineList = document.getElementById('deadline-list');
-        const clientTableBody = document.getElementById('client-table-body');
-        const addClientBtn = document.getElementById('add-client-btn');
-        const undoClientBtn = document.getElementById('undo-client-btn');
-        const filterClientsSelect = document.getElementById('filter-clients');
-        const sortableHeaders = document.querySelectorAll('.sortable-header');
-
-        // Add client modal refs
-        const addClientModal = document.getElementById('add-client-modal');
-        const newClientForm = document.getElementById('new-client-form');
-        const newClientCompanyInput = document.getElementById('new-client-company');
-        const newClientServicesInput = document.getElementById('new-client-services');
-        const closeAddClientBtn = document.getElementById('close-modal-btn');
-        const cancelNewClientBtn = document.getElementById('cancel-new-client-btn');
-
-        // Task editor modal refs
-        const taskEditModal = document.getElementById('task-edit-modal');
-        const taskEditClose = document.getElementById('task-edit-close');
-        const taskEditTitle = document.getElementById('task-edit-title');
-        const taskEditList = document.getElementById('task-edit-list');
-        const newTaskText = document.getElementById('new-task-text');
-        const newTaskPriority = document.getElementById('new-task-priority');
-        const addNewTaskBtn = document.getElementById('add-new-task-btn');
-        const taskEditCancel = document.getElementById('task-edit-cancel');
-        const taskEditSave = document.getElementById('task-edit-save');
-
-        // Music modal refs
-        const musicBtn = document.getElementById('musicBtn');
-        const musicModal = document.getElementById('music-modal');
-        const musicClose = document.getElementById('music-close');
-        const closeMusicBtn = document.getElementById('close-music-btn');
-        const genresListEl = document.getElementById('genres-list');
-        const newGenreName = document.getElementById('new-genre-name');
-        const newGenreLink = document.getElementById('new-genre-link');
-        const addGenreBtn = document.getElementById('add-genre-btn');
-
-        /* =======================
-           helper functions
-           ======================= */
-        const getMonthKey = date => date.toISOString().slice(0,7);
-        const getWeeksInMonth = (date) => {
-            const year = date.getFullYear();
-            const month = date.getMonth();
-            const firstDay = new Date(year, month, 1).getDay();
-            const daysInMonth = new Date(year, month+1, 0).getDate();
-            return Math.ceil((daysInMonth + firstDay) / 7);
-        };
-        const calculateProgress = tasks => {
-            const all = [...tasks.daily, ...tasks.weekly, ...tasks.monthly];
-            if (all.length === 0) return 0;
-            const completed = all.filter(t=>t.completed).length;
-            return Math.round((completed / all.length) * 100);
-        };
-        const calculateMonthlyProgress = monthData => {
-            let total = 0, done = 0;
-            monthData.weeks.forEach(w => {
-                if (!w) return;
-                const all = [...w.tasks.daily, ...w.tasks.weekly, ...w.tasks.monthly];
-                total += all.length;
-                done += all.filter(t=>t.completed).length;
-            });
-            return total>0?Math.round((done/total)*100):0;
-        };
-        const escapeHtml = (unsafe) => {
-            return unsafe.replace(/[&<>"']/g, function(m){ return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'})[m]; });
-        };
-
-        /* =======================
-           Renders (weeks, deadlines, clients)
-           ======================= */
-        const renderMonthNavigation = () => {
-            currentMonthSpan.textContent = currentMonth.toLocaleString('default',{month:'long',year:'numeric'});
-        };
-        const renderWeekNavigation = () => {
-            navigation.innerHTML = '';
-            const weeks = getWeeksInMonth(currentMonth);
-            for (let i=1;i<=weeks;i++){
-                const btn = document.createElement('button');
-                btn.dataset.week = i;
-                btn.className = 'nav-btn w-1/4 py-3 px-2 text-center rounded-lg text-gray-700';
-                btn.role = 'tab';
-                btn.ariaSelected = (i===activeWeek)?'true':'false';
-                btn.textContent = `Week ${i}`;
-                if (i===activeWeek) btn.classList.add('active');
-                navigation.appendChild(btn);
-            }
-        };
-
-        // Task editor context & open/close
-        let taskEditorContext = { monthKey:null, week:null, type:null };
-        const openTaskEditor = (monthKey, week, type) => {
-            taskEditorContext = { monthKey, week, type };
-            const weekData = plannerData[monthKey].weeks[week] || getDefaultTasks(week);
-            const tasks = weekData.tasks[type];
-            taskEditTitle.textContent = `${weekData.title} — ${type[0].toUpperCase()+type.slice(1)} Tasks`;
-            taskEditList.innerHTML = '';
-            tasks.forEach((t, idx)=>{
-                const div = document.createElement('div');
-                div.className = 'task-edit-item';
-                div.dataset.index = idx;
-                div.innerHTML = `
-                    <input type="text" class="rounded-md border-gray-300 p-2" value="${escapeHtml(t.text)}">
-                    <select class="task-priority rounded-md p-2">
-                        <option value="low" ${t.priority==='low'?'selected':''}>Low</option>
-                        <option value="medium" ${t.priority==='medium'?'selected':''}>Medium</option>
-                        <option value="high" ${t.priority==='high'?'selected':''}>High</option>
-                    </select>
-                    <label class="flex items-center gap-2"><input type="checkbox" class="task-completed" ${t.completed?'checked':''}> Done</label>
-                    <button class="ml-2 remove-task-btn text-red-500">Delete</button>
-                `;
-                taskEditList.appendChild(div);
-            });
-            // show modal
-            taskEditModal.style.display = 'flex';
-            newTaskText.value = '';
-            newTaskPriority.value = 'medium';
-            newTaskText.focus();
-        };
-        const closeTaskEditor = () => {
-            taskEditModal.style.display = 'none';
-            taskEditorContext = { monthKey:null, week:null, type:null };
-        };
-
-        // Render week content (includes edit buttons)
-        const renderWeekContent = (week) => {
-            const monthKey = getMonthKey(currentMonth);
-            const weekData = plannerData[monthKey].weeks[week] || getDefaultTasks(week);
-            plannerData[monthKey].weeks[week] = weekData;
-            const progress = calculateProgress(weekData.tasks);
-
-            let monthlyTasksHtml = '';
-            if (weekData.tasks.monthly.length > 0) {
-                monthlyTasksHtml = `
-                    <div class="task-card bg-[var(--card-bg)] p-6 rounded-xl shadow-sm">
-                        <div class="card-header mb-3">
-                            <h3 class="text-xl font-semibold">Monthly Tasks</h3>
-                            <button class="edit-tasks-btn" data-week="${week}" data-type="monthly">Edit Tasks</button>
-                        </div>
-                        <ul id="monthly-tasks-${week}" class="text-[var(--text-color)]" draggable="true">
-                            ${weekData.tasks.monthly.map((task,i)=>`
-                                <li data-type="monthly" data-index="${i}">
-                                    <input type="checkbox" id="task-${week}-monthly-${i}" class="task-checkbox mr-2" ${task.completed?'checked':''}>
-                                    <label for="task-${week}-monthly-${i}" class="${task.completed?'completed':''}">${task.text}</label>
-                                </li>
-                            `).join('')}
-                        </ul>
-                    </div>
-                `;
-            }
-
-            contentContainer.innerHTML = `
-                <section id="week-${week}-content" class="bg-gray-100 p-6 rounded-xl">
-                    <h2 class="text-2xl font-bold mb-4 text-center">${weekData.title}</h2>
-                    <div class="mb-4">
-                        <div class="progress-bar"><div class="progress-fill" style="width:${progress}%"></div></div>
-                        <p class="text-sm text-gray-600 mt-1 text-center">${progress}% Complete</p>
-                    </div>
-                    <div class="grid grid-cols-1 md:grid-cols-2 ${monthlyTasksHtml ? 'lg:grid-cols-3' : ''} gap-6">
-                        <div class="task-card bg-[var(--card-bg)] p-6 rounded-xl shadow-sm">
-                            <div class="card-header mb-3">
-                                <h3 class="text-xl font-semibold">Daily Tasks</h3>
-                                <button class="edit-tasks-btn" data-week="${week}" data-type="daily">Edit Tasks</button>
-                            </div>
-                            <ul id="daily-tasks-${week}" class="text-[var(--text-color)]" draggable="true">
-                                ${weekData.tasks.daily.map((task,i)=>`
-                                    <li data-type="daily" data-index="${i}">
-                                        <input type="checkbox" id="task-${week}-daily-${i}" class="task-checkbox mr-2" ${task.completed?'checked':''}>
-                                        <label for="task-${week}-daily-${i}" class="${task.completed?'completed':''}">${task.text}</label>
-                                    </li>
-                                `).join('')}
-                            </ul>
-                        </div>
-
-                        <div class="task-card bg-[var(--card-bg)] p-6 rounded-xl shadow-sm">
-                            <div class="card-header mb-3">
-                                <h3 class="text-xl font-semibold">Weekly Tasks</h3>
-                                <button class="edit-tasks-btn" data-week="${week}" data-type="weekly">Edit Tasks</button>
-                            </div>
-                            <ul id="weekly-tasks-${week}" class="text-[var(--text-color)]" draggable="true">
-                                ${weekData.tasks.weekly.map((task,i)=>`
-                                    <li data-type="weekly" data-index="${i}">
-                                        <input type="checkbox" id="task-${week}-weekly-${i}" class="task-checkbox mr-2" ${task.completed?'checked':''}>
-                                        <label for="task-${week}-weekly-${i}" class="${task.completed?'completed':''}">${task.text}</label>
-                                    </li>
-                                `).join('')}
-                            </ul>
-                        </div>
-
-                        ${monthlyTasksHtml}
-                    </div>
-                </section>
-            `;
-
-            // monthly progress update
-            const monthProgress = calculateMonthlyProgress(plannerData[monthKey]);
-            monthlyProgressFill.style.width = `${monthProgress}%`;
-            monthlyProgressText.textContent = `${monthProgress}% Complete`;
-
-            // attach edit button listeners
-            Array.from(contentContainer.querySelectorAll('.edit-tasks-btn')).forEach(btn=>{
-                btn.addEventListener('click', (e)=>{
-                    const weekNum = parseInt(btn.dataset.week,10);
-                    const type = btn.dataset.type;
-                    openTaskEditor(getMonthKey(currentMonth), weekNum, type);
-                });
-            });
-
-            // Drag & drop within lists
-            let draggedItem = null;
-            ['daily','weekly','monthly'].forEach(type=>{
-                const ul = document.getElementById(`${type}-tasks-${week}`);
-                if (!ul) return;
-                ul.addEventListener('dragstart', (e)=>{
-                    draggedItem = e.target.closest('li');
-                    if (draggedItem) draggedItem.classList.add('opacity-50');
-                    e.dataTransfer.effectAllowed = 'move';
-                    e.dataTransfer.setData('text/plain','');
-                });
-                ul.addEventListener('dragend', ()=>{
-                    if (draggedItem) draggedItem.classList.remove('opacity-50');
-                    draggedItem = null;
-                });
-                ul.addEventListener('dragover', (e)=>{
-                    e.preventDefault();
-                    e.dataTransfer.dropEffect = 'move';
-                });
-                ul.addEventListener('drop', (e)=>{
-                    e.preventDefault();
-                    if (!draggedItem) return;
-                    const targetLi = e.target.closest('li');
-                    if (targetLi && draggedItem !== targetLi) {
-                        ul.insertBefore(draggedItem, targetLi.nextSibling);
-                    }
-                    // update data order
-                    const newOrder = Array.from(ul.children).map(li=>{
-                        const idx = parseInt(li.dataset.index,10);
-                        return plannerData[getMonthKey(currentMonth)].weeks[week].tasks[type][idx];
-                    });
-                    plannerData[getMonthKey(currentMonth)].weeks[week].tasks[type] = newOrder;
-                    // reindex DOM dataset
-                    Array.from(ul.children).forEach((li, idx)=> li.dataset.index = idx);
-                    saveData(STORAGE_KEYS.PLANNER, plannerData);
-                });
-            });
-        };
-
-        // Deadlines render
-        const renderDeadlineList = () => {
-            deadlineList.innerHTML = '';
-            if (deadlines.length === 0) {
-                deadlineList.innerHTML = '<li class="p-4 bg-gray-100 rounded-lg text-gray-500">No deadlines added yet.</li>';
-                return;
-            }
-            const today = new Date().setHours(0,0,0,0);
-            deadlines.forEach((dl, idx) => {
-                const dlDate = new Date(dl.date).setHours(0,0,0,0);
-                const isOverdue = dlDate < today;
-                const li = document.createElement('li');
-                li.className = `p-4 bg-gray-100 rounded-lg flex items-center justify-between ${isOverdue? 'overdue':''}`;
-                li.innerHTML = `
-                    <div>
-                        <span class="font-semibold text-gray-700">${new Date(dl.date).toLocaleDateString(undefined,{year:'numeric',month:'long',day:'numeric'})}:</span>
-                        <span class="text-gray-600"> ${dl.task} - ${dl.client}</span>
-                    </div>
-                    <button data-index="${idx}" class="remove-deadline text-red-400 hover:text-red-600 font-bold text-xl cursor-pointer">&times;</button>
-                `;
-                deadlineList.appendChild(li);
-            });
-        };
-
-        // Clients render
-        const renderClientTable = (data) => {
-            clientTableBody.innerHTML = '';
-            if (data.length === 0) {
-                clientTableBody.innerHTML = '<tr><td colspan="4" class="p-4 text-center text-gray-500">No clients found.</td></tr>';
-                return;
-            }
-            data.forEach(client => {
-                const row = document.createElement('tr');
-                row.className = `border-b border-gray-200 ${client.complete ? 'completed' : ''}`;
-                row.innerHTML = `
-                    <td class="p-4 py-3 align-top">${client.company}</td>
-                    <td class="p-4 py-3 align-top">${client.services}</td>
-                    <td class="p-4 py-3 align-top text-center">
-                        <input data-index="${client.__idx}" type="checkbox" class="w-4 h-4 client-complete-checkbox" ${client.complete ? 'checked' : ''}>
-                    </td>
-                    <td class="p-4 py-3 align-top text-center">
-                        <button data-index="${client.__idx}" class="remove-client-btn text-red-400 hover:text-red-600 font-bold text-xl cursor-pointer">&times;</button>
-                    </td>
-                `;
-                clientTableBody.appendChild(row);
-            });
-        };
-        const filterAndRenderClients = () => {
-            const mapped = clientData.map((c,i)=>({...c,__idx:i}));
-            let filtered = [...mapped];
-            if (currentFilter === 'complete') filtered = mapped.filter(c=>c.complete);
-            if (currentFilter === 'incomplete') filtered = mapped.filter(c=>!c.complete);
-            renderClientTable(filtered);
-        };
-
-        const showError = (id, show) => document.getElementById(id).classList.toggle('hidden', !show);
-
-        /* =======================
-           Event listeners (navigation, tasks, deadlines, clients)
-           ======================= */
-        prevMonthBtn.addEventListener('click', () => {
-            currentMonth.setMonth(currentMonth.getMonth()-1);
-            const mKey = getMonthKey(currentMonth);
-            if (!plannerData[mKey]) plannerData[mKey] = { weeks: [] };
-            activeWeek = 1;
-            renderMonthNavigation();
-            renderWeekNavigation();
-            renderWeekContent(activeWeek);
-            saveData(STORAGE_KEYS.ACTIVE_MONTH, currentMonth.toISOString());
-            saveData(STORAGE_KEYS.ACTIVE_WEEK, activeWeek);
-            saveData(STORAGE_KEYS.PLANNER, plannerData);
-        });
-        nextMonthBtn.addEventListener('click', () => {
-            currentMonth.setMonth(currentMonth.getMonth()+1);
-            const mKey = getMonthKey(currentMonth);
-            if (!plannerData[mKey]) plannerData[mKey] = { weeks: [] };
-            activeWeek = 1;
-            renderMonthNavigation();
-            renderWeekNavigation();
-            renderWeekContent(activeWeek);
-            saveData(STORAGE_KEYS.ACTIVE_MONTH, currentMonth.toISOString());
-            saveData(STORAGE_KEYS.ACTIVE_WEEK, activeWeek);
-            saveData(STORAGE_KEYS.PLANNER, plannerData);
-        });
-
-        navigation.addEventListener('click', (e) => {
-            if (e.target.classList.contains('nav-btn')) {
-                activeWeek = parseInt(e.target.dataset.week,10);
-                document.querySelectorAll('.nav-btn').forEach(btn => { btn.classList.remove('active'); btn.ariaSelected = 'false'; });
-                e.target.classList.add('active');
-                e.target.ariaSelected = 'true';
-                renderWeekContent(activeWeek);
-                saveData(STORAGE_KEYS.ACTIVE_WEEK, activeWeek);
-            }
-        });
-
-        // Task checkbox change
-        contentContainer.addEventListener('change', (e) => {
-            if (e.target.classList.contains('task-checkbox')) {
-                const li = e.target.closest('li');
-                if (!li) return;
-                const type = li.dataset.type;
-                const idx = parseInt(li.dataset.index,10);
-                const mKey = getMonthKey(currentMonth);
-                plannerData[mKey].weeks[activeWeek].tasks[type][idx].completed = e.target.checked;
-                saveData(STORAGE_KEYS.PLANNER, plannerData);
-                const lbl = li.querySelector('label');
-                if (lbl) lbl.classList.toggle('completed', e.target.checked);
-
-                // update progress UI
-                const progress = calculateProgress(plannerData[mKey].weeks[activeWeek].tasks);
-                const fill = contentContainer.querySelector('.progress-fill');
-                const text = contentContainer.querySelector('.text-sm');
-                if (fill) fill.style.width = `${progress}%`;
-                if (text) text.textContent = `${progress}% Complete`;
-                const monthProgress = calculateMonthlyProgress(plannerData[mKey]);
-                monthlyProgressFill.style.width = `${monthProgress}%`;
-                monthlyProgressText.textContent = `${monthProgress}% Complete`;
-            }
-        });
-
-        // Add deadline
-        deadlineForm.addEventListener('submit', (e) => {
-            e.preventDefault();
-            const dateInput = document.getElementById('deadline-date');
-            const taskInput = document.getElementById('deadline-task');
-            const clientInput = document.getElementById('deadline-client');
-            let valid = true;
-            showError('deadline-date-error', !dateInput.value);
-            showError('deadline-task-error', !taskInput.value.trim());
-            showError('deadline-client-error', !clientInput.value.trim());
-            if (!dateInput.value || !taskInput.value.trim() || !clientInput.value.trim()) valid = false;
-            if (!valid) return;
-            deadlines.push({ date: dateInput.value, task: taskInput.value.trim(), client: clientInput.value.trim() });
-            deadlines.sort((a,b)=> new Date(a.date) - new Date(b.date));
-            renderDeadlineList();
-            saveData(STORAGE_KEYS.DEADLINES, deadlines);
-            dateInput.value=''; taskInput.value=''; clientInput.value='';
-        });
-
-        // Remove deadline (delegated)
-        deadlineList.addEventListener('click', (e) => {
-            if (e.target.classList.contains('remove-deadline')) {
-                const idx = parseInt(e.target.dataset.index,10);
-                if (!isNaN(idx)) {
-                    deadlines.splice(idx,1);
-                    saveData(STORAGE_KEYS.DEADLINES, deadlines);
-                    renderDeadlineList();
-                }
-            }
-        });
-
-        // Client modal
-        addClientBtn.addEventListener('click', () => { addClientModal.style.display='flex'; newClientCompanyInput.focus(); });
-        closeAddClientBtn.addEventListener('click', ()=> addClientModal.style.display='none');
-        cancelNewClientBtn.addEventListener('click', ()=> addClientModal.style.display='none');
-        addClientModal.addEventListener('keydown', (e)=> { if (e.key === 'Escape') addClientModal.style.display='none'; });
-
-        newClientForm.addEventListener('submit', (e)=> {
-            e.preventDefault();
-            const company = newClientCompanyInput.value.trim();
-            const services = newClientServicesInput.value.trim();
-            let valid = true;
-            showError('new-client-company-error', !company);
-            showError('new-client-services-error', !services);
-            if (!company || !services) valid = false;
-            if (!valid) return;
-            clientData.push({ company, services, complete: false });
-            filterAndRenderClients();
-            addClientModal.style.display='none';
-            saveData(STORAGE_KEYS.CLIENTS, clientData);
-            newClientForm.reset();
-        });
-
-        // Client checkbox toggle (delegated)
-        clientTableBody.addEventListener('change', (e) => {
-            if (e.target.classList.contains('client-complete-checkbox')) {
-                const idx = parseInt(e.target.dataset.index,10);
-                if (!isNaN(idx)) {
-                    clientData[idx].complete = e.target.checked;
-                    filterAndRenderClients();
-                    saveData(STORAGE_KEYS.CLIENTS, clientData);
-                }
-            }
-        });
-
-        // Remove client (delegated)
-        clientTableBody.addEventListener('click', (e) => {
-            if (e.target.classList.contains('remove-client-btn')) {
-                const idx = parseInt(e.target.dataset.index,10);
-                if (!isNaN(idx)) {
-                    lastRemovedClient = clientData.splice(idx,1)[0];
-                    filterAndRenderClients();
-                    undoClientBtn.classList.remove('hidden');
-                    saveData(STORAGE_KEYS.CLIENTS, clientData);
-                }
-            }
-        });
-
-        // Undo client removal
-        undoClientBtn.addEventListener('click', () => {
-            if (lastRemovedClient) {
-                clientData.push(lastRemovedClient);
-                lastRemovedClient = null;
-                undoClientBtn.classList.add('hidden');
-                filterAndRenderClients();
-                saveData(STORAGE_KEYS.CLIENTS, clientData);
-            }
-        });
-
-        // Filter clients
-        filterClientsSelect.addEventListener('change', (e)=> {
-            currentFilter = e.target.value;
-            filterAndRenderClients();
-        });
-
-        // Sorting client table headers
-        sortableHeaders.forEach(header => {
-            header.addEventListener('click', (e) => {
-                const sortKey = e.target.dataset.sortKey;
-                const direction = sortDirection[sortKey] === 'asc' ? 'desc' : 'asc';
-                sortDirection[sortKey] = direction;
-                e.target.textContent = e.target.textContent.replace(/ [▲▼]$/, '') + (direction === 'asc' ? ' ▲' : ' ▼');
-                clientData.sort((a,b) => {
-                    const aV = String(a[sortKey] || '').toLowerCase();
-                    const bV = String(b[sortKey] || '').toLowerCase();
-                    return direction === 'asc' ? aV.localeCompare(bV) : bV.localeCompare(aV);
-                });
-                filterAndRenderClients();
-            });
-        });
-
-        // Task editor internals
-        addNewTaskBtn.addEventListener('click', () => {
-            const text = newTaskText.value.trim();
-            const pr = newTaskPriority.value;
-            if (!text) return;
-            const div = document.createElement('div');
-            div.className = 'task-edit-item';
-            div.innerHTML = `
-                <input type="text" class="rounded-md border-gray-300 p-2" value="${escapeHtml(text)}">
-                <select class="task-priority rounded-md p-2">
-                    <option value="low" ${pr==='low'?'selected':''}>Low</option>
-                    <option value="medium" ${pr==='medium'?'selected':''}>Medium</option>
-                    <option value="high" ${pr==='high'?'selected':''}>High</option>
-                </select>
-                <label class="flex items-center gap-2"><input type="checkbox" class="task-completed"> Done</label>
-                <button class="ml-2 remove-task-btn text-red-500">Delete</button>
-            `;
-            taskEditList.appendChild(div);
-            newTaskText.value = '';
-            newTaskText.focus();
-        });
-
-        // Remove task from editor (delegated)
-        taskEditList.addEventListener('click', (e) => {
-            if (e.target.classList.contains('remove-task-btn')) {
-                const item = e.target.closest('.task-edit-item');
-                if (item) item.remove();
-            }
-        });
-
-        // Close task editor
-        taskEditClose.addEventListener('click', closeTaskEditor);
-        taskEditCancel.addEventListener('click', closeTaskEditor);
-        window.addEventListener('click', (e)=> { if (e.target === taskEditModal) closeTaskEditor(); });
-
-        // Save task editor changes
-        taskEditSave.addEventListener('click', () => {
-            const { monthKey, week, type } = taskEditorContext;
-            if (!monthKey || !week || !type) { closeTaskEditor(); return; }
-            const weekData = plannerData[monthKey].weeks[week] || getDefaultTasks(week);
-            const newTasks = Array.from(taskEditList.children).map(div=>{
-                const text = div.querySelector('input[type="text"]').value.trim();
-                const priority = div.querySelector('.task-priority').value;
-                const completed = !!div.querySelector('.task-completed').checked;
-                return { text, priority, completed };
-            });
-            weekData.tasks[type] = newTasks;
-            plannerData[monthKey].weeks[week] = weekData;
-            saveData(STORAGE_KEYS.PLANNER, plannerData);
-            if (getMonthKey(currentMonth) === monthKey && activeWeek === week) renderWeekContent(week);
-            const monthProgress = calculateMonthlyProgress(plannerData[monthKey]);
-            monthlyProgressFill.style.width = `${monthProgress}%`;
-            monthlyProgressText.textContent = `${monthProgress}% Complete`;
-            closeTaskEditor();
-        });
-
-        // Notifications for overdue deadlines (request once)
-        if (window.Notification && Notification.permission === 'default') Notification.requestPermission();
-        if (window.Notification && Notification.permission === 'granted') {
-            const today = new Date().setHours(0,0,0,0);
-            deadlines.forEach(dl=>{
-                if (new Date(dl.date).setHours(0,0,0,0) < today && !dl.notified) {
-                    new Notification('Overdue Deadline',{body:`${dl.task} for ${dl.client}`});
-                    dl.notified = true;
-                    saveData(STORAGE_KEYS.DEADLINES, deadlines);
-                }
-            });
-        }
-
-        /* =======================
-           Music modal: render, add, edit, delete, open link
-           ======================= */
-        const renderGenres = () => {
-            genresListEl.innerHTML = '';
-            musicGenres.forEach((g, idx) => {
-                const row = document.createElement('div');
-                row.className = 'genre-row bg-gray-50 p-2 rounded-lg';
-                row.dataset.index = idx;
-                row.innerHTML = `
-                    <div class="flex-1">
-                        <a href="#" class="genre-link font-medium">${escapeHtml(g.name)}</a>
-                        <div class="small-muted">${escapeHtml(g.url)}</div>
-                    </div>
-                    <div class="genre-actions flex items-center">
-                        <button class="open-genre-btn bg-green-500 text-white py-1 px-2 rounded-md">Open</button>
-                        <button class="edit-genre-btn bg-yellow-300 text-black py-1 px-2 rounded-md">Edit</button>
-                        <button class="delete-genre-btn bg-red-400 text-white py-1 px-2 rounded-md">Delete</button>
-                    </div>
-                `;
-                genresListEl.appendChild(row);
-            });
-        };
-
-        // Open music modal
-        const openMusicModal = () => {
-            renderGenres();
-            musicModal.style.display = 'flex';
-        };
-        // Close music modal
-        const closeMusicModal = () => {
-            musicModal.style.display = 'none';
-        };
-
-        // Music button handlers
-        musicBtn.addEventListener('click', openMusicModal);
-        musicClose.addEventListener('click', closeMusicModal);
-        closeMusicBtn.addEventListener('click', closeMusicModal);
-        window.addEventListener('click', (e)=> { if (e.target === musicModal) closeMusicModal(); });
-
-        // Add new genre
-        addGenreBtn.addEventListener('click', () => {
-            const name = (newGenreName.value || '').trim();
-            const url = (newGenreLink.value || '').trim();
-            if (!name) { newGenreName.focus(); return; }
-            const linkToSave = url || `https://www.youtube.com/results?search_query=${encodeURIComponent(name)}`;
-            musicGenres.push({ name, url: linkToSave });
-            saveData(STORAGE_KEYS.MUSIC, musicGenres);
-            newGenreName.value = '';
-            newGenreLink.value = '';
-            renderGenres();
-        });
-
-        // Delegated genre actions (open, edit, delete)
-        genresListEl.addEventListener('click', (e) => {
-            const row = e.target.closest('.genre-row');
-            if (!row) return;
-            const idx = parseInt(row.dataset.index,10);
-            if (e.target.classList.contains('open-genre-btn')) {
-                const url = musicGenres[idx].url;
-                window.open(url, '_blank', 'noopener');
-            } else if (e.target.classList.contains('delete-genre-btn')) {
-                if (!confirm(`Delete genre "${musicGenres[idx].name}"?`)) return;
-                musicGenres.splice(idx,1);
-                saveData(STORAGE_KEYS.MUSIC, musicGenres);
-                renderGenres();
-            } else if (e.target.classList.contains('edit-genre-btn')) {
-                // open in-place edit UI
-                const g = musicGenres[idx];
-                const editDiv = document.createElement('div');
-                editDiv.className = 'grid grid-cols-1 md:grid-cols-3 gap-2 w-full';
-                editDiv.innerHTML = `
-                    <input type="text" class="rounded-md p-2 md:col-span-2 edit-genre-name" value="${escapeHtml(g.name)}">
-                    <input type="text" class="rounded-md p-2 edit-genre-url" value="${escapeHtml(g.url)}">
-                    <div class="md:col-span-3 flex gap-2 justify-end mt-2">
-                        <button class="save-genre-btn bg-[#10b981] text-white py-1 px-3 rounded-md">Save</button>
-                        <button class="cancel-genre-edit-btn bg-gray-200 text-black py-1 px-3 rounded-md">Cancel</button>
-                    </div>
-                `;
-                // replace the row content temporarily
-                row.innerHTML = '';
-                row.appendChild(editDiv);
-
-                // save/cancel handlers (delegated on the editDiv)
-                editDiv.addEventListener('click', function handler(ev){
-                    if (ev.target.classList.contains('save-genre-btn')) {
-                        const newName = editDiv.querySelector('.edit-genre-name').value.trim();
-                        const newUrl = editDiv.querySelector('.edit-genre-url').value.trim();
-                        if (!newName) { alert('Name cannot be empty'); return; }
-                        musicGenres[idx] = { name: newName, url: newUrl || `https://www.youtube.com/results?search_query=${encodeURIComponent(newName)}` };
-                        saveData(STORAGE_KEYS.MUSIC, musicGenres);
-                        renderGenres();
-                    } else if (ev.target.classList.contains('cancel-genre-edit-btn')) {
-                        renderGenres();
-                    }
-                }, { once: true });
-            }
-        });
-
-        /* =======================
-           final initial renders
-           ======================= */
-        renderMonthNavigation();
-        renderWeekNavigation();
-        renderWeekContent(activeWeek);
-        renderDeadlineList();
-        filterAndRenderClients();
-
-        // Expose removeDeadline for inline use (if needed)
-        window.removeDeadline = function(idx){
-            if (typeof idx !== 'number') return;
-            deadlines.splice(idx,1);
-            saveData(STORAGE_KEYS.DEADLINES, deadlines);
-            renderDeadlineList();
-        };
-
-        // End DOMContentLoaded
-    });
-    </script>
+    <div class="container mx-auto p-4 sm:p-6 md:p-8 max-w-7xl">
+                <header class="text-center mb-8 relative">
+            <h1 class="text-4xl font-bold text-gray-800">Monthly Work Planner</h1>
+            <p class="text-lg text-gray-600 mt-2 w-full">A dynamic and interactive schedule to keep you organized.</p>
+
+                        <div class="music-top-right absolute right-0 top-0">
+                <button id="musicBtn" class="music-btn mr-2" title="Open Music genres">🎵 Music</button>
+            </div>
+        </header>
+
+        <main>
+                        <nav id="month-navigation" class="flex justify-center items-center bg-white rounded-xl shadow-sm p-2 mb-4">
+                <button id="prev-month" class="nav-btn px-4 py-2 text-gray-700">&lt; Prev</button>
+                <span id="current-month" class="px-4 py-2 font-semibold"></span>
+                <button id="next-month" class="nav-btn px-4 py-2 text-gray-700">Next &gt;</button>
+            </nav>
+
+                        <nav id="week-navigation" role="tablist" class="flex justify-center items-center bg-white rounded-xl shadow-sm p-2 mb-8"></nav>
+
+                        <div id="monthly-progress" class="mb-8 bg-white p-6 rounded-xl shadow-sm">
+                <h2 class="text-2xl font-bold text-gray-800 mb-4">Monthly Progress</h2>
+                <div class="progress-bar mb-2"><div id="monthly-progress-fill" class="progress-fill" style="width:0%"></div></div>
+                <p id="monthly-progress-text" class="text-sm text-gray-600 text-center">0% Complete</p>
+            </div>
+
+                        <div id="planner-content"></div>
+
+                        <section id="deadlines-section" class="mt-10 bg-white p-6 rounded-xl shadow-sm">
+                <h2 class="text-2xl font-bold text-gray-800 mb-4 border-b-2 border-gray-200 pb-2">Upcoming Deadlines</h2>
+                <p class="text-gray-600 mb-6">Use this section to track specific deadlines for projects and tasks. Add new deadlines using the form below.</p>
+                <ul id="deadline-list" class="space-y-3 mb-8"></ul>
+                <div class="mt-6">
+                    <h3 class="text-xl font-semibold text-gray-800 mb-3">Add a New Deadline</h3>
+                    <form id="add-deadline-form" class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+                        <div class="md:col-span-1">
+                            <label for="deadline-date" class="block text-sm font-medium text-gray-700">Date</label>
+                            <input id="deadline-date" type="date" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 bg-white text-gray-900">
+                            <p id="deadline-date-error" class="error-message hidden">Please select a date.</p>
+                        </div>
+                        <div class="md:col-span-2">
+                            <label for="deadline-task" class="block text-sm font-medium text-gray-700">Project/Task Name</label>
+                            <input id="deadline-task" type="text" placeholder="e.g., Finalize Q3 Report" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 bg-white text-gray-900">
+                            <p id="deadline-task-error" class="error-message hidden">Please enter a task name.</p>
+                        </div>
+                        <div class="md:col-span-1">
+                            <label for="deadline-client" class="block text-sm font-medium text-gray-700">Client</label>
+                            <input id="deadline-client" type="text" placeholder="e.g., Client Inc." required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 bg-white text-gray-900">
+                            <p id="deadline-client-error" class="error-message hidden">Please enter a client.</p>
+                        </div>
+                        <button type="submit" class="w-full md:w-auto md:col-start-4 bg-[#E42642] text-white font-semibold py-2 px-6 rounded-lg hover:bg-opacity-90 transition-colors">Add Deadline</button>
+                    </form>
+                </div>
+            </section>
+
+                        <section id="clients-section" class="mt-10 bg-white p-6 rounded-xl shadow-sm">
+                <h2 class="text-2xl font-bold text-gray-800 mb-4 border-b-2 border-gray-200 pb-2">Active Clients</h2>
+                <div class="flex justify-between items-center mb-4">
+                    <div class="flex items-center gap-2">
+                        <label for="filter-clients" class="text-sm font-medium text-gray-700">Filter by:</label>
+                        <select id="filter-clients" class="bg-white text-gray-900 rounded-md border-gray-300 shadow-sm p-2 text-sm">
+                            <option value="all">All</option>
+                            <option value="incomplete">Incomplete</option>
+                            <option value="complete">Complete</option>
+                        </select>
+                    </div>
+                    <div class="flex justify-end gap-2">
+                        <button id="undo-client-btn" class="bg-gray-200 text-gray-600 font-semibold py-2 px-6 rounded-lg hidden">Undo Remove</button>
+                        <button id="add-client-btn" class="bg-[#E42642] text-white font-semibold py-2 px-6 rounded-lg">Add New Client</button>
+                    </div>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead>
+                            <tr>
+                                <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider sortable-header" data-sort-key="company">Company</th>
+                                <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider sortable-header" data-sort-key="services">Services</th>
+                                <th class="px-4 py-3 text-center text-sm font-semibold text-gray-700 uppercase tracking-wider">Complete</th>
+                                <th class="px-4 py-3 text-center text-sm font-semibold text-gray-700 uppercase tracking-wider">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="client-table-body" class="bg-white divide-y divide-gray-200"></tbody>
+                    </table>
+                </div>
+            </section>
+        </main>
+    </div>
+
+        <div id="add-client-modal" class="modal">
+        <div class="modal-content p-6 rounded-xl shadow-lg">
+            <span id="close-modal-btn" class="close-btn">&times;</span>
+            <h3 class="text-xl font-semibold text-gray-800 mb-4">Add New Client</h3>
+            <form id="new-client-form" class="space-y-4">
+                <div>
+                    <label for="new-client-company" class="block text-sm font-medium text-gray-700">Company</label>
+                    <input id="new-client-company" type="text" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 bg-white text-gray-900">
+                    <p id="new-client-company-error" class="error-message hidden">Please enter a company name.</p>
+                </div>
+                <div>
+                    <label for="new-client-services" class="block text-sm font-medium text-gray-700">Services</label>
+                    <input id="new-client-services" type="text" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 bg-white text-gray-900">
+                    <p id="new-client-services-error" class="error-message hidden">Please enter services.</p>
+                </div>
+                <div class="flex justify-end gap-2 mt-4">
+                    <button id="cancel-new-client-btn" type="button" class="bg-gray-200 text-gray-800 font-semibold py-2 px-6 rounded-lg">Cancel</button>
+                    <button id="confirm-new-client-btn" type="submit" class="bg-[#E42642] text-white font-semibold py-2 px-6 rounded-lg">Confirm</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+        <div id="task-edit-modal" class="modal">
+        <div class="modal-content">
+            <span id="task-edit-close" class="close-btn">&times;</span>
+            <h3 id="task-edit-title" class="text-xl font-semibold mb-3">Edit Tasks</h3>
+            <div id="task-edit-list" class="task-edit-list mb-3"></div>
+
+            <div class="flex gap-2 items-center mb-3">
+                <input id="new-task-text" type="text" placeholder="New task description" class="w-full rounded-md border-gray-300 p-2">
+                <select id="new-task-priority" class="rounded-md border-gray-300 p-2">
+                    <option value="low">Low</option>
+                    <option value="medium" selected>Medium</option>
+                    <option value="high">High</option>
+                </select>
+                <button id="add-new-task-btn" class="bg-[#E42642] text-white py-2 px-4 rounded-md">Add</button>
+            </div>
+
+            <div class="flex justify-end gap-2">
+                <button id="task-edit-cancel" class="bg-gray-200 text-gray-800 py-2 px-4 rounded-md">Cancel</button>
+                <button id="task-edit-save" class="bg-[#10b981] text-white py-2 px-4 rounded-md">Save Changes</button>
+            </div>
+        </div>
+    </div>
+
+        <div id="music-modal" class="modal">
+        <div class="modal-content">
+            <span id="music-close" class="close-btn">&times;</span>
+            <h3 class="text-xl font-semibold mb-3">Music Genres</h3>
+            <p class="small-muted mb-3">Click a genre to open YouTube. Use edit/delete to manage your list. Changes saved automatically.</p>
+            <div id="genres-list" class="space-y-2 mb-4"></div>
+
+            <h4 class="font-semibold mb-2">Add new genre</h4>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-2 mb-4">
+                <input id="new-genre-name" type="text" placeholder="Genre (e.g., Lo-Fi Hip Hop)" class="rounded-md border-gray-300 p-2 md:col-span-2">
+                <input id="new-genre-link" type="text" placeholder="YouTube search or playlist link" class="rounded-md border-gray-300 p-2">
+                <button id="add-genre-btn" class="bg-[#E42642] text-white py-2 px-4 rounded-md md:col-span-3">Add Genre</button>
+            </div>
+            <div class="flex justify-end gap-2">
+                <button id="close-music-btn" class="bg-gray-200 text-gray-800 py-2 px-4 rounded-md">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        /* =======================
+           Storage keys
+           ======================= */
+        const STORAGE_KEYS = {
+            DEADLINES: 'monthlyPlannerDeadlines',
+            CLIENTS: 'monthlyPlannerClients',
+            ACTIVE_MONTH: 'monthlyPlannerActiveMonth',
+            ACTIVE_WEEK: 'monthlyPlannerActiveWeek',
+            PLANNER: 'monthlyPlannerData',
+            MUSIC: 'monthlyPlannerMusicGenres' // new
+        };
+
+        /* =======================
+           App state
+           ======================= */
+        let lastRemovedClient = null;
+        let sortDirection = {};
+        let currentFilter = 'all';
+        let currentDate = new Date('2025-09-09'); // kept as original; swap to new Date() if desired
+        let currentMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+        let activeWeek = 1;
+
+        /* =======================
+           Default tasks (same as original)
+           ======================= */
+        const getDefaultTasks = (week) => {
+            const defaults = [
+                null,
+                {
+                    title: 'Content Creation Focus',
+                    tasks: {
+                        daily: [
+                            { text: 'Check CMA inbox for anything urgent.', completed: false, priority: 'medium' },
+                            { text: 'Check follow up sheet, confirm meetings and book the boardroom for any meetings.', completed: false, priority: 'high' },
+                            { text: 'Get to RMS emails', completed: false, priority: 'medium' }
+                        ],
+                        weekly: [
+                            { text: 'Keyword research for new blogs & Write Blogs. Write social media captions.', completed: false, priority: 'high' },
+                            { text: 'Put content into client folders and notify Stephanie with a deadline for the 20th.', completed: false, priority: 'medium' },
+                            { text: 'Google Ads Report (Friday)', completed: false, priority: 'high' }
+                        ],
+                        monthly: [
+                            { text: 'Create and schedule content.', completed: false, priority: 'high' },
+                            { text: 'SEO optimisation for clients.', completed: false, priority: 'medium' },
+                            { text: 'Update SEO sheets.', completed: false, priority: 'low' }
+                        ]
+                    }
+                },
+                {
+                    title: 'SEO Optimization Focus',
+                    tasks: {
+                        daily: [
+                            { text: 'Check CMA inbox for anything urgent.', completed: false, priority: 'medium' },
+                            { text: 'Check follow up sheet, confirm meetings and book the boardroom for any meetings.', completed: false, priority: 'high' },
+                            { text: 'Get to RMS emails', completed: false, priority: 'medium' }
+                        ],
+                        weekly: [
+                            { text: 'On-Page SEO keywords. Meta Descriptions. Image Alt tags.', completed: false, priority: 'high' },
+                            { text: 'Google Ads Report (Friday)', completed: false, priority: 'high' }
+                        ],
+                        monthly: []
+                    }
+                },
+                {
+                    title: 'Content Review & Reporting Focus',
+                    tasks: {
+                        daily: [
+                            { text: 'Check CMA inbox for anything urgent.', completed: false, priority: 'medium' },
+                            { text: 'Check follow up sheet, confirm meetings and book the boardroom for any meetings.', completed: false, priority: 'high' },
+                            { text: 'Get to RMS emails', completed: false, priority: 'medium' }
+                        ],
+                        weekly: [
+                            { text: 'Send out SEO report to all clients (Wednesday).', completed: false, priority: 'high' },
+                            { text: 'Mail shots (Thursday).', completed: false, priority: 'medium' },
+                            { text: 'Get content from Stephanie.', completed: false, priority: 'medium' },
+                            { text: 'Google Ads Report (Friday)', completed: false, priority: 'high' }
+                        ],
+                        monthly: []
+                    }
+                },
+                {
+                    title: 'Content Scheduling Focus',
+                    tasks: {
+                        daily: [
+                            { text: 'Check CMA inbox for anything urgent.', completed: false, priority: 'medium' },
+                            { text: 'Check follow up sheet, confirm meetings and book the boardroom for any meetings.', completed: false, priority: 'high' },
+                            { text: 'Get to RMS emails', completed: false, priority: 'medium' }
+                        ],
+                        weekly: [
+                            { text: 'Schedule content for the coming month.', completed: false, priority: 'high' },
+                            { text: 'Brainstorm ideas.', completed: false, priority: 'low' },
+                            { text: 'Google Ads Report (Friday)', completed: false, priority: 'high' }
+                        ],
+                        monthly: []
+                    }
+                }
+            ];
+            return defaults[week] || { title: `Week ${week}`, tasks: { daily: [], weekly: [], monthly: [] } };
+        };
+
+        /* =======================
+           Storage helpers
+           ======================= */
+        const loadData = (key) => {
+            const data = localStorage.getItem(key);
+            return data ? JSON.parse(data) : null;
+        };
+        const saveData = (key, data) => localStorage.setItem(key, JSON.stringify(data));
+
+        /* =======================
+           Initialize stored data
+           ======================= */
+        let plannerData = loadData(STORAGE_KEYS.PLANNER) || {};
+        const monthKeyInit = currentMonth.toISOString().slice(0,7);
+        if (!plannerData[monthKeyInit]) plannerData[monthKeyInit] = { weeks: [null, getDefaultTasks(1), getDefaultTasks(2), getDefaultTasks(3), getDefaultTasks(4)] };
+
+        let deadlines = loadData(STORAGE_KEYS.DEADLINES) || [];
+        let clientData = loadData(STORAGE_KEYS.CLIENTS) || [
+            { company: 'Prominent Roofing', services: 'Google Ads, 1 SEO blog, 4 posts', complete: false },
+            { company: 'CFO Connect', services: 'Google Ads, 1 SEO blog', complete: false },
+            { company: 'The Green Zone', services: 'Google Ads, 1 SEO blog, 8 posts', complete: false },
+            { company: 'Atzaro', services: 'Google Ads, 4 SEO blogs, 16 posts', complete: false },
+            { company: 'Landy Logic', services: 'Google Ads, 4 posts', complete: false },
+            { company: 'Absolute Ablutions', services: 'Google Ads, 2 SEO blogs', complete: false }
+        ];
+        const savedMonth = loadData(STORAGE_KEYS.ACTIVE_MONTH);
+        if (savedMonth) currentMonth = new Date(savedMonth);
+        activeWeek = parseInt(loadData(STORAGE_KEYS.ACTIVE_WEEK)) || 1;
+
+        // Music genres (load or default)
+        const defaultGenres = [
+            { name: 'Lo-Fi Hip Hop', url: 'https://www.youtube.com/results?search_query=lofi+hip+hop' },
+            { name: 'Jazz', url: 'https://www.youtube.com/results?search_query=jazz+playlist' },
+            { name: 'Classical', url: 'https://www.youtube.com/results?search_query=classical+music' },
+            { name: 'Deep House', url: 'https://www.youtube.com/results?search_query=deep+house' },
+            { name: 'Focus / Study', url: 'https://www.youtube.com/results?search_query=focus+study+music' },
+            { name: 'Rock', url: 'https://www.youtube.com/results?search_query=rock+playlist' }
+        ];
+        let musicGenres = loadData(STORAGE_KEYS.MUSIC) || defaultGenres.slice();
+
+        /* =======================
+           DOM references
+           ======================= */
+        const prevMonthBtn = document.getElementById('prev-month');
+        const nextMonthBtn = document.getElementById('next-month');
+        const currentMonthSpan = document.getElementById('current-month');
+        const navigation = document.getElementById('week-navigation');
+        const contentContainer = document.getElementById('planner-content');
+        const monthlyProgressFill = document.getElementById('monthly-progress-fill');
+        const monthlyProgressText = document.getElementById('monthly-progress-text');
+        const deadlineForm = document.getElementById('add-deadline-form');
+        const deadlineList = document.getElementById('deadline-list');
+        const clientTableBody = document.getElementById('client-table-body');
+        const addClientBtn = document.getElementById('add-client-btn');
+        const undoClientBtn = document.getElementById('undo-client-btn');
+        const filterClientsSelect = document.getElementById('filter-clients');
+        const sortableHeaders = document.querySelectorAll('.sortable-header');
+
+        // Add client modal refs
+        const addClientModal = document.getElementById('add-client-modal');
+        const newClientForm = document.getElementById('new-client-form');
+        const newClientCompanyInput = document.getElementById('new-client-company');
+        const newClientServicesInput = document.getElementById('new-client-services');
+        const closeAddClientBtn = document.getElementById('close-modal-btn');
+        const cancelNewClientBtn = document.getElementById('cancel-new-client-btn');
+
+        // Task editor modal refs
+        const taskEditModal = document.getElementById('task-edit-modal');
+        const taskEditClose = document.getElementById('task-edit-close');
+        const taskEditTitle = document.getElementById('task-edit-title');
+        const taskEditList = document.getElementById('task-edit-list');
+        const newTaskText = document.getElementById('new-task-text');
+        const newTaskPriority = document.getElementById('new-task-priority');
+        const addNewTaskBtn = document.getElementById('add-new-task-btn');
+        const taskEditCancel = document.getElementById('task-edit-cancel');
+        const taskEditSave = document.getElementById('task-edit-save');
+
+        // Music modal refs
+        const musicBtn = document.getElementById('musicBtn');
+        const musicModal = document.getElementById('music-modal');
+        const musicClose = document.getElementById('music-close');
+        const closeMusicBtn = document.getElementById('close-music-btn');
+        const genresListEl = document.getElementById('genres-list');
+        const newGenreName = document.getElementById('new-genre-name');
+        const newGenreLink = document.getElementById('new-genre-link');
+        const addGenreBtn = document.getElementById('add-genre-btn');
+
+        /* =======================
+           helper functions
+           ======================= */
+        const getMonthKey = date => date.toISOString().slice(0,7);
+        const getWeeksInMonth = (date) => {
+            const year = date.getFullYear();
+            const month = date.getMonth();
+            const firstDay = new Date(year, month, 1).getDay();
+            const daysInMonth = new Date(year, month+1, 0).getDate();
+            return Math.ceil((daysInMonth + firstDay) / 7);
+        };
+        const calculateProgress = tasks => {
+            const all = [...tasks.daily, ...tasks.weekly, ...tasks.monthly];
+            if (all.length === 0) return 0;
+            const completed = all.filter(t=>t.completed).length;
+            return Math.round((completed / all.length) * 100);
+        };
+        const calculateMonthlyProgress = monthData => {
+            let total = 0, done = 0;
+            monthData.weeks.forEach(w => {
+                if (!w) return;
+                const all = [...w.tasks.daily, ...w.tasks.weekly, ...w.tasks.monthly];
+                total += all.length;
+                done += all.filter(t=>t.completed).length;
+            });
+            return total>0?Math.round((done/total)*100):0;
+        };
+        const escapeHtml = (unsafe) => {
+            return unsafe.replace(/[&<>"']/g, function(m){ return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'})[m]; });
+        };
+
+        /* =======================
+           Renders (weeks, deadlines, clients)
+           ======================= */
+        const renderMonthNavigation = () => {
+            currentMonthSpan.textContent = currentMonth.toLocaleString('default',{month:'long',year:'numeric'});
+        };
+        const renderWeekNavigation = () => {
+            navigation.innerHTML = '';
+            const weeks = getWeeksInMonth(currentMonth);
+            for (let i=1;i<=weeks;i++){
+                const btn = document.createElement('button');
+                btn.dataset.week = i;
+                btn.className = 'nav-btn w-1/4 py-3 px-2 text-center rounded-lg text-gray-700';
+                btn.role = 'tab';
+                btn.ariaSelected = (i===activeWeek)?'true':'false';
+                btn.textContent = `Week ${i}`;
+                if (i===activeWeek) btn.classList.add('active');
+                navigation.appendChild(btn);
+            }
+        };
+
+        // Task editor context & open/close
+        let taskEditorContext = { monthKey:null, week:null, type:null };
+        const openTaskEditor = (monthKey, week, type) => {
+            taskEditorContext = { monthKey, week, type };
+            const weekData = plannerData[monthKey].weeks[week] || getDefaultTasks(week);
+            const tasks = weekData.tasks[type];
+            taskEditTitle.textContent = `${weekData.title} — ${type[0].toUpperCase()+type.slice(1)} Tasks`;
+            taskEditList.innerHTML = '';
+            tasks.forEach((t, idx)=>{
+                const div = document.createElement('div');
+                div.className = 'task-edit-item';
+                div.dataset.index = idx;
+                div.innerHTML = `
+                    <input type="text" class="rounded-md border-gray-300 p-2" value="${escapeHtml(t.text)}">
+                    <select class="task-priority rounded-md p-2">
+                        <option value="low" ${t.priority==='low'?'selected':''}>Low</option>
+                        <option value="medium" ${t.priority==='medium'?'selected':''}>Medium</option>
+                        <option value="high" ${t.priority==='high'?'selected':''}>High</option>
+                    </select>
+                    <label class="flex items-center gap-2"><input type="checkbox" class="task-completed" ${t.completed?'checked':''}> Done</label>
+                    <button class="ml-2 remove-task-btn text-red-500">Delete</button>
+                `;
+                taskEditList.appendChild(div);
+            });
+            // show modal
+            taskEditModal.style.display = 'flex';
+            newTaskText.value = '';
+            newTaskPriority.value = 'medium';
+            newTaskText.focus();
+        };
+        const closeTaskEditor = () => {
+            taskEditModal.style.display = 'none';
+            taskEditorContext = { monthKey:null, week:null, type:null };
+        };
+
+        // Render week content (includes edit buttons)
+        const renderWeekContent = (week) => {
+            const monthKey = getMonthKey(currentMonth);
+            const weekData = plannerData[monthKey].weeks[week] || getDefaultTasks(week);
+            plannerData[monthKey].weeks[week] = weekData; // Ensure data is stored
+            const progress = calculateProgress(weekData.tasks);
+
+            let monthlyTasksHtml = '';
+            if (weekData.tasks.monthly.length > 0) {
+                monthlyTasksHtml = `
+                    <div class="task-card bg-[var(--card-bg)] p-6 rounded-xl shadow-sm">
+                        <div class="card-header mb-3">
+                            <h3 class="text-xl font-semibold">Monthly Tasks</h3>
+                            <button class="edit-tasks-btn" data-week="${week}" data-type="monthly">Edit Tasks</button>
+                        </div>
+                        <ul id="monthly-tasks-${week}" class="text-[var(--text-color)]" draggable="true">
+                            ${weekData.tasks.monthly.map((task,i)=>`
+                                <li data-type="monthly" data-index="${i}">
+                                    <input type="checkbox" id="task-${week}-monthly-${i}" class="task-checkbox mr-2" ${task.completed?'checked':''}>
+                                    <label for="task-${week}-monthly-${i}" class="${task.completed?'completed':''}">${task.text}</label>
+                                </li>
+                            `).join('')}
+                        </ul>
+                    </div>
+                `;
+            }
+
+            let weeklyTasksHtml = '';
+            if (weekData.tasks.weekly.length > 0) {
+                weeklyTasksHtml = `
+                    <div class="task-card bg-[var(--card-bg)] p-6 rounded-xl shadow-sm">
+                        <div class="card-header mb-3">
+                            <h3 class="text-xl font-semibold">Weekly Tasks</h3>
+                            <button class="edit-tasks-btn" data-week="${week}" data-type="weekly">Edit Tasks</button>
+                        </div>
+                        <ul id="weekly-tasks-${week}" class="text-[var(--text-color)]" draggable="true">
+                            ${weekData.tasks.weekly.map((task,i)=>`
+                                <li data-type="weekly" data-index="${i}">
+                                    <input type="checkbox" id="task-${week}-weekly-${i}" class="task-checkbox mr-2" ${task.completed?'checked':''}>
+                                    <label for="task-${week}-weekly-${i}" class="${task.completed?'completed':''}">${task.text}</label>
+                                </li>
+                            `).join('')}
+                        </ul>
+                    </div>
+                `;
+            }
+
+            let dailyTasksHtml = '';
+            if (weekData.tasks.daily.length > 0) {
+                dailyTasksHtml = `
+                    <div class="task-card bg-[var(--card-bg)] p-6 rounded-xl shadow-sm">
+                        <div class="card-header mb-3">
+                            <h3 class="text-xl font-semibold">Daily Tasks</h3>
+                            <button class="edit-tasks-btn" data-week="${week}" data-type="daily">Edit Tasks</button>
+                        </div>
+                        <ul id="daily-tasks-${week}" class="text-[var(--text-color)]" draggable="true">
+                            ${weekData.tasks.daily.map((task,i)=>`
+                                <li data-type="daily" data-index="${i}">
+                                    <input type="checkbox" id="task-${week}-daily-${i}" class="task-checkbox mr-2" ${task.completed?'checked':''}>
+                                    <label for="task-${week}-daily-${i}" class="${task.completed?'completed':''}">${task.text}</label>
+                                </li>
+                            `).join('')}
+                        </ul>
+                    </div>
+                `;
+            }
+
+            contentContainer.innerHTML = `
+                <h2 class="text-3xl font-bold text-gray-800 mb-6 text-center">${weekData.title}</h2>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    ${monthlyTasksHtml}
+                    ${weeklyTasksHtml}
+                    ${dailyTasksHtml}
+                </div>
+            `;
+
+            updateMonthlyProgress();
+        };
+
+        const updateMonthlyProgress = () => {
+            const monthKey = getMonthKey(currentMonth);
+            const monthData = plannerData[monthKey];
+            if (!monthData) return;
+            const progress = calculateMonthlyProgress(monthData);
+            monthlyProgressFill.style.width = `${progress}%`;
+            monthlyProgressText.textContent = `${progress}% Complete`;
+        };
+
+        const renderDeadlines = () => {
+            deadlineList.innerHTML = '';
+            const today = new Date();
+            today.setHours(0, 0, 0, 0); // Normalize today's date
+
+            const sortedDeadlines = deadlines.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+            if (sortedDeadlines.length === 0) {
+                deadlineList.innerHTML = '<p class="text-gray-500">No pending deadlines</p>';
+                return;
+            }
+
+            sortedDeadlines.forEach(deadline => {
+                const deadlineDate = new Date(deadline.date);
+                const timeDiff = deadlineDate.getTime() - today.getTime();
+                const daysDiff = Math.ceil(timeDiff / (1000 * 60 * 60 * 24));
+
+                let colorClass = '';
+                if (daysDiff >= 3) {
+                    colorClass = 'text-green-600';
+                } else if (daysDiff >= 1 && daysDiff < 3) {
+                    colorClass = 'text-yellow-600';
+                } else if (daysDiff === 0) {
+                    colorClass = 'text-red-600 font-bold';
+                } else { // Past deadlines
+                    colorClass = 'text-red-600 font-bold overdue';
+                }
+
+                const li = document.createElement('li');
+                li.className = `flex justify-between items-center p-3 rounded-md shadow-sm bg-white ${colorClass}`;
+                li.innerHTML = `
+                    <div>
+                        <p class="font-medium">${deadline.task}</p>
+                        <p class="text-sm text-gray-500">${deadline.client} - ${deadline.date}</p>
+                    </div>
+                    <div>
+                        <button class="remove-deadline-btn text-red-500 hover:text-red-700 text-sm font-semibold mr-2">Remove</button>
+                    </div>
+                `;
+                li.querySelector('.remove-deadline-btn').addEventListener('click', () => {
+                    deadlines = deadlines.filter(d => d !== deadline);
+                    saveData(STORAGE_KEYS.DEADLINES, deadlines);
+                   renderDeadlines();
+                });
+                deadlineList.appendChild(li);
+            });
+        };
+
+        const renderClients = () => {
+            clientTableBody.innerHTML = '';
+            let filteredClients = clientData;
+
+            if (currentFilter === 'incomplete') {
+                filteredClients = clientData.filter(c => !c.complete);
+            } else if (currentFilter === 'complete') {
+                filteredClients = clientData.filter(c => c.complete);
+            }
+
+            // Apply sorting
+            const sortKey = Object.keys(sortDirection)[0];
+            if (sortKey) {
+                filteredClients.sort((a, b) => {
+                    if (a[sortKey] < b[sortKey]) return sortDirection[sortKey] === 'asc' ? -1 : 1;
+                    if (a[sortKey] > b[sortKey]) return sortDirection[sortKey] === 'asc' ? 1 : -1;
+                    return 0;
+                });
+            }
+
+
+            filteredClients.forEach((client, index) => {
+                const row = clientTableBody.insertRow();
+                row.innerHTML = `
+                    <td class="px-4 py-3 whitespace-nowrap">${escapeHtml(client.company)}</td>
+                    <td class="px-4 py-3 whitespace-nowrap">${escapeHtml(client.services)}</td>
+                    <td class="px-4 py-3 whitespace-nowrap text-center">
+                        <input type="checkbox" class="client-complete-checkbox" data-index="${index}" ${client.complete ? 'checked' : ''} class="h-4 w-4 text-green-600 border-gray-300 rounded focus:ring-green-500">
+                    </td>
+                    <td class="px-4 py-3 whitespace-nowrap text-center">
+                        <button class="remove-client-btn text-red-500 hover:text-red-700 font-semibold text-sm mr-2" data-index="${index}">Remove</button>
+                    </td>
+                `;
+            });
+        };
+
+        // Music genres render
+        const renderMusicGenres = () => {
+            genresListEl.innerHTML = '';
+            musicGenres.forEach((genre, index) => {
+                const div = document.createElement('div');
+                div.className = 'genre-row';
+                div.innerHTML = `
+                    <a href="${genre.url}" target="_blank" class="text-blue-600 hover:underline">${escapeHtml(genre.name)}</a>
+                    <div class="genre-actions">
+                        <button class="edit-genre-btn text-gray-500 hover:text-gray-700 text-sm" data-index="${index}">Edit</button>
+                        <button class="remove-genre-btn text-red-500 hover:text-red-700 text-sm" data-index="${index}">Delete</button>
+                    </div>
+                `;
+                genresListEl.appendChild(div);
+            });
+        };
+
+        /* =======================
+           Event Listeners
+           ======================= */
+        prevMonthBtn.addEventListener('click', () => {
+            currentMonth.setMonth(currentMonth.getMonth() - 1);
+            saveData(STORAGE_KEYS.ACTIVE_MONTH, currentMonth.toISOString());
+            renderMonthNavigation();
+            renderWeekNavigation();
+            // Reset active week to 1 for the new month
+            activeWeek = 1;
+            renderWeekNavigation(); // Re-render to update active state
+            renderWeekContent(activeWeek);
+            saveData(STORAGE_KEYS.ACTIVE_WEEK, activeWeek);
+        });
+
+        nextMonthBtn.addEventListener('click', () => {
+            currentMonth.setMonth(currentMonth.getMonth() + 1);
+            saveData(STORAGE_KEYS.ACTIVE_MONTH, currentMonth.toISOString());
+            renderMonthNavigation();
+            renderWeekNavigation();
+            // Reset active week to 1 for the new month
+            activeWeek = 1;
+            renderWeekNavigation(); // Re-render to update active state
+            renderWeekContent(activeWeek);
+            saveData(STORAGE_KEYS.ACTIVE_WEEK, activeWeek);
+        });
+
+        navigation.addEventListener('click', (e) => {
+            if (e.target.classList.contains('nav-btn')) {
+                const week = parseInt(e.target.dataset.week);
+                activeWeek = week;
+                renderWeekNavigation();
+                renderWeekContent(activeWeek);
+                saveData(STORAGE_KEYS.ACTIVE_WEEK, activeWeek);
+            }
+        });
+
+        // Add deadline form submission
+        deadlineForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const date = document.getElementById('deadline-date').value;
+            const task = document.getElementById('deadline-task').value.trim();
+            const client = document.getElementById('deadline-client').value.trim();
+
+            if (!date || !task || !client) {
+                if (!date) document.getElementById('deadline-date-error').classList.remove('hidden');
+                if (!task) document.getElementById('deadline-task-error').classList.remove('hidden');
+                if (!client) document.getElementById('deadline-client-error').classList.remove('hidden');
+                return;
+            }
+
+            deadlines.push({ date, task, client });
+            saveData(STORAGE_KEYS.DEADLINES, deadlines);
+            deadlineForm.reset();
+            renderDeadlines();
+        });
+
+        // Add client modal events
+        addClientBtn.addEventListener('click', () => addClientModal.style.display = 'flex');
+        closeAddClientBtn.addEventListener('click', () => addClientModal.style.display = 'none');
+        cancelNewClientBtn.addEventListener('click', () => addClientModal.style.display = 'none');
+
+        newClientForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const company = newClientCompanyInput.value.trim();
+            const services = newClientServicesInput.value.trim();
+
+            if (!company || !services) {
+                if (!company) document.getElementById('new-client-company-error').classList.remove('hidden');
+                if (!services) document.getElementById('new-client-services-error').classList.remove('hidden');
+                return;
+            }
+
+            clientData.push({ company, services, complete: false });
+            saveData(STORAGE_KEYS.CLIENTS, clientData);
+            newClientForm.reset();
+            addClientModal.style.display = 'none';
+            renderClients();
+        });
+
+        // Undo client removal
+        undoClientBtn.addEventListener('click', () => {
+            if (lastRemovedClient) {
+                clientData.push(lastRemovedClient);
+                saveData(STORAGE_KEYS.CLIENTS, clientData);
+                renderClients();
+                undoClientBtn.classList.add('hidden');
+                lastRemovedClient = null;
+            }
+        });
+
+        // Filter clients
+        filterClientsSelect.addEventListener('change', (e) => {
+            currentFilter = e.target.value;
+            renderClients();
+        });
+
+        // Client table events (completion, removal)
+        clientTableBody.addEventListener('change', (e) => {
+            if (e.target.classList.contains('client-complete-checkbox')) {
+                const index = parseInt(e.target.dataset.index);
+                clientData[index].complete = e.target.checked;
+                saveData(STORAGE_KEYS.CLIENTS, clientData);
+                renderClients(); // Re-render to apply filtering if active
+            }
+        });
+
+        clientTableBody.addEventListener('click', (e) => {
+            if (e.target.classList.contains('remove-client-btn')) {
+                const index = parseInt(e.target.dataset.index);
+                lastRemovedClient = clientData.splice(index, 1)[0];
+                saveData(STORAGE_KEYS.CLIENTS, clientData);
+                renderClients();
+                undoClientBtn.classList.remove('hidden');
+            }
+        });
+
+        // Sorting
+        sortableHeaders.forEach(header => {
+            header.addEventListener('click', () => {
+                const sortKey = header.dataset.sortKey;
+                const currentSortDirection = sortDirection[sortKey] || 'desc';
+                sortDirection = {}; // Clear previous sort
+               sortDirection[sortKey] = currentSortDirection === 'asc' ? 'desc' : 'asc';
+                renderClients();
+            });
+        });
+
+        // Task editor button clicks
+        contentContainer.addEventListener('click', (e) => {
+            if (e.target.classList.contains('edit-tasks-btn')) {
+                const week = parseInt(e.target.dataset.week);
+                const type = e.target.dataset.type;
+                const monthKey = getMonthKey(currentMonth);
+                openTaskEditor(monthKey, week, type);
+            } else if (e.target.classList.contains('task-checkbox')) {
+                const li = e.target.closest('li');
+                const type = li.dataset.type;
+                const index = parseInt(li.dataset.index);
+                const monthKey = getMonthKey(currentMonth);
+                const week = parseInt(li.closest('.task-card').querySelector('.edit-tasks-btn').dataset.week);
+                plannerData[monthKey].weeks[week].tasks[type][index].completed = e.target.checked;
+                saveData(STORAGE_KEYS.PLANNER, plannerData);
+                // Update label class
+                li.querySelector('label').classList.toggle('completed', e.target.checked);
+                updateMonthlyProgress();
+            }
+        });
+
+        taskEditClose.addEventListener('click', closeTaskEditor);
+        taskEditCancel.addEventListener('click', closeTaskEditor);
+        addNewTaskBtn.addEventListener('click', () => {
+            const text = newTaskText.value.trim();
+            const priority = newTaskPriority.value;
+            if (text) {
+                const monthKey = taskEditorContext.monthKey;
+                const week = taskEditorContext.week;
+                const type = taskEditorContext.type;
+                plannerData[monthKey].weeks[week].tasks[type].push({ text, priority, completed: false });
+                // Re-render the list in the modal to show the new task
+                const tasks = plannerData[monthKey].weeks[week].tasks[type];
+                taskEditList.innerHTML = tasks.map((t, idx)=>`
+                    <div class="task-edit-item" data-index="${idx}">
+                        <input type="text" class="rounded-md border-gray-300 p-2" value="${escapeHtml(t.text)}">
+                        <select class="task-priority rounded-md p-2">
+                            <option value="low" ${t.priority==='low'?'selected':''}>Low</option>
+                            <option value="medium" ${t.priority==='medium'?'selected':''}>Medium</option>
+                            <option value="high" ${t.priority==='high'?'selected':''}>High</option>
+                        </select>
+                        <label class="flex items-center gap-2"><input type="checkbox" class="task-completed" ${t.completed?'checked':''}> Done</label>
+                        <button class="ml-2 remove-task-btn text-red-500">Delete</button>
+                    </div>
+                `).join('');
+                newTaskText.value = '';
+                newTaskText.focus();
+            }
+        });
+
+        taskEditList.addEventListener('click', (e) => {
+            if (e.target.classList.contains('remove-task-btn')) {
+                const item = e.target.closest('.task-edit-item');
+                const index = parseInt(item.dataset.index);
+                const monthKey = taskEditorContext.monthKey;
+                const week = taskEditorContext.week;
+                const type = taskEditorContext.type;
+                plannerData[monthKey].weeks[week].tasks[type].splice(index, 1);
+                item.remove(); // Remove from the modal view
+                // Re-index other items to maintain correct dataset.index
+                taskEditList.querySelectorAll('.task-edit-item').forEach((el, idx) => el.dataset.index = idx);
+            } else if (e.target.classList.contains('task-completed')) {
+                const item = e.target.closest('.task-edit-item');
+                const index = parseInt(item.dataset.index);
+                const monthKey = taskEditorContext.monthKey;
+                const week = taskEditorContext.week;
+                const type = taskEditorContext.type;
+                plannerData[monthKey].weeks[week].tasks[type][index].completed = e.target.checked;
+            }
+        });
+
+
+        taskEditSave.addEventListener('click', () => {
+            const monthKey = taskEditorContext.monthKey;
+            const week = taskEditorContext.week;
+            const type = taskEditorContext.type;
+
+            taskEditList.querySelectorAll('.task-edit-item').forEach(item => {
+                const index = parseInt(item.dataset.index);
+                const text = item.querySelector('input[type="text"]').value.trim();
+                const priority = item.querySelector('select').value;
+                const completed = item.querySelector('.task-completed').checked;
+
+                plannerData[monthKey].weeks[week].tasks[type][index] = { text, priority, completed };
+            });
+
+            saveData(STORAGE_KEYS.PLANNER, plannerData);
+            closeTaskEditor();
+            renderWeekContent(activeWeek); // Re-render the main content to reflect changes
+        });
+
+        // Music modal events
+        musicBtn.addEventListener('click', () => musicModal.style.display = 'flex');
+        musicClose.addEventListener('click', () => musicModal.style.display = 'none');
+        closeMusicBtn.addEventListener('click', () => musicModal.style.display = 'none');
+
+        genresListEl.addEventListener('click', (e) => {
+            if (e.target.classList.contains('remove-genre-btn')) {
+                const index = parseInt(e.target.dataset.index);
+                musicGenres.splice(index, 1);
+                saveData(STORAGE_KEYS.MUSIC, musicGenres);
+                renderMusicGenres();
+            } else if (e.target.classList.contains('edit-genre-btn')) {
+                const index = parseInt(e.target.dataset.index);
+                const genre = musicGenres[index];
+                newGenreName.value = genre.name;
+                newGenreLink.value = genre.url;
+                // Change add button to update button temporarily
+                addGenreBtn.textContent = 'Update Genre';
+                addGenreBtn.dataset.editingIndex = index; // Store index for updating
+            }
+        });
+
+        addGenreBtn.addEventListener('click', () => {
+            const name = newGenreName.value.trim();
+            const url = newGenreLink.value.trim();
+
+            if (!name || !url) return;
+
+            if (addGenreBtn.textContent === 'Update Genre') {
+                const index = parseInt(addGenreBtn.dataset.editingIndex);
+                musicGenres[index] = { name, url };
+                addGenreBtn.textContent = 'Add Genre'; // Reset button text
+                delete addGenreBtn.dataset.editingIndex; // Remove editing index
+            } else {
+                musicGenres.push({ name, url });
+            }
+
+            saveData(STORAGE_KEYS.MUSIC, musicGenres);
+            newGenreName.value = '';
+            newGenreLink.value = '';
+            renderMusicGenres();
+        });
+
+
+        /* =======================
+           Initialization
+           ======================= */
+
+        // Display welcome popup
+        const displayWelcomePopup = () => {
+            const popupDiv = document.createElement('div');
+            popupDiv.id = 'welcome-popup';
+            popupDiv.style.cssText = `
+                position: fixed;
+                top: 0; left: 0; width: 100%; height: 100%;
+                background-color: rgba(0, 0, 0, 0.7);
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                z-index: 1001;
+            `;
+
+            const popupContent = document.createElement('div');
+            popupContent.style.cssText = `
+                background-color: white;
+                padding: 30px;
+                border-radius: 10px;
+                text-align: center;
+                box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            `;
+
+            const title = document.createElement('h2');
+            title.textContent = 'Welcome back, Great Conqueror.';
+            title.style.cssText = `
+                font-size: 24px;
+                font-weight: bold;
+                margin-bottom: 15px;
+                color: #333;
+            `;
+            popupContent.appendChild(title);
+
+            const deadlinesTitle = document.createElement('h3');
+            deadlinesTitle.textContent = 'Currently Active Deadlines:';
+            deadlinesTitle.style.cssText = `
+                font-size: 18px;
+                margin-bottom: 10px;
+                color: #555;
+            `;
+            popupContent.appendChild(deadlinesTitle);
+
+            const deadlinesListDiv = document.createElement('div');
+            deadlinesListDiv.id = 'popup-deadline-list';
+            deadlinesListDiv.style.cssText = `
+                max-height: 200px;
+                overflow-y: auto;
+                text-align: left;
+            `;
+
+            const today = new Date();
+            today.setHours(0, 0, 0, 0); // Normalize today's date
+
+            const sortedDeadlines = deadlines.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+            if (sortedDeadlines.length === 0) {
+                deadlinesListDiv.innerHTML = '<p class="text-gray-500">No pending deadlines</p>';
+            } else {
+                sortedDeadlines.forEach(deadline => {
+                    const deadlineDate = new Date(deadline.date);
+                    const timeDiff = deadlineDate.getTime() - today.getTime();
+                    const daysDiff = Math.ceil(timeDiff / (1000 * 60 * 60 * 24));
+
+                    let colorClass = '';
+                    if (daysDiff >= 3) {
+                        colorClass = 'color-green';
+                    } else if (daysDiff >= 1 && daysDiff < 3) {
+                        colorClass = 'color-yellow';
+                    } else { // Today or overdue
+                        colorClass = 'color-red';
+                    }
+
+                    const p = document.createElement('p');
+                    p.style.cssText = `margin-bottom: 8px; padding: 5px; border-radius: 4px; ${getColorStyle(colorClass)}`;
+                    p.innerHTML = `<strong>${escapeHtml(deadline.task)}</strong> - ${escapeHtml(deadline.client)} (${deadline.date})`;
+                    deadlinesListDiv.appendChild(p);
+                });
+            }
+            popupContent.appendChild(deadlinesListDiv);
+
+            const closeButton = document.createElement('button');
+            closeButton.textContent = 'Got It!';
+            closeButton.style.cssText = `
+                background-color: #E42642;
+                color: white;
+                padding: 10px 20px;
+                border: none;
+                border-radius: 5px;
+                cursor: pointer;
+                margin-top: 20px;
+                font-weight: bold;
+            `;
+            closeButton.addEventListener('click', () => {
+                popupDiv.remove();
+            });
+            popupContent.appendChild(closeButton);
+
+            popupDiv.appendChild(popupContent);
+            document.body.appendChild(popupDiv);
+        };
+
+        // Function to get color styles based on deadline proximity
+        const getColorStyle = (colorClass) => {
+            switch(colorClass) {
+                case 'color-green':
+                    return 'background-color: #d4edda; color: #155724;'; // Green background, dark green text
+                case 'color-yellow':
+                    return 'background-color: #fff3cd; color: #856404;'; // Yellow background, dark yellow text
+                case 'color-red':
+                    return 'background-color: #f8d7da; color: #721c24; font-weight: bold;'; // Red background, dark red text
+                default:
+                    return 'color: #333;'; // Default text color
+            }
+        };
+
+        // Initial render calls
+        renderMonthNavigation();
+        renderWeekNavigation();
+        renderWeekContent(activeWeek);
+        renderDeadlines();
+        renderClients();
+        renderMusicGenres();
+
+        // Display the welcome popup after initial rendering
+        displayWelcomePopup();
+    });
+    </script>
 </body>
 </html>
