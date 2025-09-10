@@ -34,23 +34,37 @@
         .progress-fill{background-color:var(--progress-fill);height:100%;transition:width .3s ease}
         .error-message{color:#E42642;font-size:.875rem;margin-top:.25rem}
         [role="tab"]:focus{outline:2px solid var(--accent-color)}
-        /* small utility for edit button inside card header */
-        .card-header { display:flex; align-items:center; justify-content:space-between; gap:8px }
-        .edit-tasks-btn { background: transparent; border: 1px solid rgba(0,0,0,0.08); padding:6px 10px; border-radius:8px; font-size:0.875rem; cursor:pointer }
-        .edit-tasks-btn:hover { background: rgba(0,0,0,0.03) }
-        /* modal task editor */
-        .task-edit-list { max-height: 320px; overflow:auto; margin-bottom: 12px; }
-        .task-edit-item { display:flex; gap:8px; align-items:center; margin-bottom:8px; }
-        .task-edit-item input[type="text"] { flex:1; }
-        .task-priority { font-size:0.8rem; padding:6px 8px; border-radius:6px; border:1px solid #e5e7eb; background:#fff }
+        /* card header & edit button */
+        .card-header{display:flex;align-items:center;justify-content:space-between;gap:8px}
+        .edit-tasks-btn{background:transparent;border:1px solid rgba(0,0,0,.08);padding:6px 10px;border-radius:8px;font-size:.875rem;cursor:pointer}
+        .edit-tasks-btn:hover{background:rgba(0,0,0,.03)}
+        .task-edit-list{max-height:320px;overflow:auto;margin-bottom:12px}
+        .task-edit-item{display:flex;gap:8px;align-items:center;margin-bottom:8px}
+        .music-btn{background:var(--accent-color);color:#fff;padding:.5rem .75rem;border-radius:.6rem;font-weight:600;display:inline-flex;align-items:center;gap:.5rem;border:none;cursor:pointer}
+        .music-btn:hover{opacity:.95}
+        .music-top-right{position:absolute;right:0;top:0}
+        header.relative{position:relative}
+        /* music modal specific */
+        .genre-row{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px;border-radius:8px}
+        .genre-actions button{margin-left:6px}
+        .small-muted{font-size:.875rem;color:#6b7280}
+        /* responsive small tune */
+        @media (max-width:640px){
+            .music-top-right{position:static;margin-top:.5rem}
+        }
     </style>
 </head>
 <body class="antialiased text-gray-900">
     <div class="container mx-auto p-4 sm:p-6 md:p-8 max-w-7xl">
-        <!-- Centered header -->
-        <header class="text-center mb-8">
+        <!-- Header: centered heading + top-right music button -->
+        <header class="text-center mb-8 relative">
             <h1 class="text-4xl font-bold text-gray-800">Monthly Work Planner</h1>
             <p class="text-lg text-gray-600 mt-2 w-full">A dynamic and interactive schedule to keep you organized.</p>
+
+            <!-- Music button placed top-right -->
+            <div class="music-top-right absolute right-0 top-0">
+                <button id="musicBtn" class="music-btn mr-2" title="Open Music genres">🎵 Music</button>
+            </div>
         </header>
 
         <main>
@@ -160,13 +174,12 @@
         </div>
     </div>
 
-    <!-- Task Editor Modal (reused for daily/weekly/monthly) -->
+    <!-- Task Editor Modal -->
     <div id="task-edit-modal" class="modal">
         <div class="modal-content">
             <span id="task-edit-close" class="close-btn">&times;</span>
             <h3 id="task-edit-title" class="text-xl font-semibold mb-3">Edit Tasks</h3>
-
-            <div class="task-edit-list mb-3" id="task-edit-list"></div>
+            <div id="task-edit-list" class="task-edit-list mb-3"></div>
 
             <div class="flex gap-2 items-center mb-3">
                 <input id="new-task-text" type="text" placeholder="New task description" class="w-full rounded-md border-gray-300 p-2">
@@ -185,26 +198,53 @@
         </div>
     </div>
 
+    <!-- Music Modal -->
+    <div id="music-modal" class="modal">
+        <div class="modal-content">
+            <span id="music-close" class="close-btn">&times;</span>
+            <h3 class="text-xl font-semibold mb-3">Music Genres</h3>
+            <p class="small-muted mb-3">Click a genre to open YouTube. Use edit/delete to manage your list. Changes saved automatically.</p>
+            <div id="genres-list" class="space-y-2 mb-4"></div>
+
+            <h4 class="font-semibold mb-2">Add new genre</h4>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-2 mb-4">
+                <input id="new-genre-name" type="text" placeholder="Genre (e.g., Lo-Fi Hip Hop)" class="rounded-md border-gray-300 p-2 md:col-span-2">
+                <input id="new-genre-link" type="text" placeholder="YouTube search or playlist link" class="rounded-md border-gray-300 p-2">
+                <button id="add-genre-btn" class="bg-[#E42642] text-white py-2 px-4 rounded-md md:col-span-3">Add Genre</button>
+            </div>
+            <div class="flex justify-end gap-2">
+                <button id="close-music-btn" class="bg-gray-200 text-gray-800 py-2 px-4 rounded-md">Close</button>
+            </div>
+        </div>
+    </div>
+
     <script>
     document.addEventListener('DOMContentLoaded', () => {
-        // STORAGE KEYS
+        /* =======================
+           Storage keys
+           ======================= */
         const STORAGE_KEYS = {
             DEADLINES: 'monthlyPlannerDeadlines',
             CLIENTS: 'monthlyPlannerClients',
             ACTIVE_MONTH: 'monthlyPlannerActiveMonth',
             ACTIVE_WEEK: 'monthlyPlannerActiveWeek',
-            PLANNER: 'monthlyPlannerData'
+            PLANNER: 'monthlyPlannerData',
+            MUSIC: 'monthlyPlannerMusicGenres' // new
         };
 
-        // State
+        /* =======================
+           App state
+           ======================= */
         let lastRemovedClient = null;
         let sortDirection = {};
         let currentFilter = 'all';
-        let currentDate = new Date('2025-09-09'); // kept as in original; change to new Date() if desired
+        let currentDate = new Date('2025-09-09'); // kept as original; swap to new Date() if desired
         let currentMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
         let activeWeek = 1;
 
-        // Default tasks (same as original)
+        /* =======================
+           Default tasks (same as original)
+           ======================= */
         const getDefaultTasks = (week) => {
             const defaults = [
                 null,
@@ -280,14 +320,18 @@
             return defaults[week] || { title: `Week ${week}`, tasks: { daily: [], weekly: [], monthly: [] } };
         };
 
-        // Storage helpers
+        /* =======================
+           Storage helpers
+           ======================= */
         const loadData = (key) => {
-            const d = localStorage.getItem(key);
-            return d ? JSON.parse(d) : null;
+            const data = localStorage.getItem(key);
+            return data ? JSON.parse(data) : null;
         };
-        const saveData = (key, val) => localStorage.setItem(key, JSON.stringify(val));
+        const saveData = (key, data) => localStorage.setItem(key, JSON.stringify(data));
 
-        // Initialize planner data
+        /* =======================
+           Initialize stored data
+           ======================= */
         let plannerData = loadData(STORAGE_KEYS.PLANNER) || {};
         const monthKeyInit = currentMonth.toISOString().slice(0,7);
         if (!plannerData[monthKeyInit]) plannerData[monthKeyInit] = { weeks: [null, getDefaultTasks(1), getDefaultTasks(2), getDefaultTasks(3), getDefaultTasks(4)] };
@@ -305,7 +349,20 @@
         if (savedMonth) currentMonth = new Date(savedMonth);
         activeWeek = parseInt(loadData(STORAGE_KEYS.ACTIVE_WEEK)) || 1;
 
-        // DOM refs
+        // Music genres (load or default)
+        const defaultGenres = [
+            { name: 'Lo-Fi Hip Hop', url: 'https://www.youtube.com/results?search_query=lofi+hip+hop' },
+            { name: 'Jazz', url: 'https://www.youtube.com/results?search_query=jazz+playlist' },
+            { name: 'Classical', url: 'https://www.youtube.com/results?search_query=classical+music' },
+            { name: 'Deep House', url: 'https://www.youtube.com/results?search_query=deep+house' },
+            { name: 'Focus / Study', url: 'https://www.youtube.com/results?search_query=focus+study+music' },
+            { name: 'Rock', url: 'https://www.youtube.com/results?search_query=rock+playlist' }
+        ];
+        let musicGenres = loadData(STORAGE_KEYS.MUSIC) || defaultGenres.slice();
+
+        /* =======================
+           DOM references
+           ======================= */
         const prevMonthBtn = document.getElementById('prev-month');
         const nextMonthBtn = document.getElementById('next-month');
         const currentMonthSpan = document.getElementById('current-month');
@@ -321,6 +378,7 @@
         const filterClientsSelect = document.getElementById('filter-clients');
         const sortableHeaders = document.querySelectorAll('.sortable-header');
 
+        // Add client modal refs
         const addClientModal = document.getElementById('add-client-modal');
         const newClientForm = document.getElementById('new-client-form');
         const newClientCompanyInput = document.getElementById('new-client-company');
@@ -328,7 +386,7 @@
         const closeAddClientBtn = document.getElementById('close-modal-btn');
         const cancelNewClientBtn = document.getElementById('cancel-new-client-btn');
 
-        // Task editor modal elements
+        // Task editor modal refs
         const taskEditModal = document.getElementById('task-edit-modal');
         const taskEditClose = document.getElementById('task-edit-close');
         const taskEditTitle = document.getElementById('task-edit-title');
@@ -339,7 +397,19 @@
         const taskEditCancel = document.getElementById('task-edit-cancel');
         const taskEditSave = document.getElementById('task-edit-save');
 
-        // helpers
+        // Music modal refs
+        const musicBtn = document.getElementById('musicBtn');
+        const musicModal = document.getElementById('music-modal');
+        const musicClose = document.getElementById('music-close');
+        const closeMusicBtn = document.getElementById('close-music-btn');
+        const genresListEl = document.getElementById('genres-list');
+        const newGenreName = document.getElementById('new-genre-name');
+        const newGenreLink = document.getElementById('new-genre-link');
+        const addGenreBtn = document.getElementById('add-genre-btn');
+
+        /* =======================
+           helper functions
+           ======================= */
         const getMonthKey = date => date.toISOString().slice(0,7);
         const getWeeksInMonth = (date) => {
             const year = date.getFullYear();
@@ -356,7 +426,7 @@
         };
         const calculateMonthlyProgress = monthData => {
             let total = 0, done = 0;
-            monthData.weeks.forEach(w=>{
+            monthData.weeks.forEach(w => {
                 if (!w) return;
                 const all = [...w.tasks.daily, ...w.tasks.weekly, ...w.tasks.monthly];
                 total += all.length;
@@ -364,8 +434,13 @@
             });
             return total>0?Math.round((done/total)*100):0;
         };
+        const escapeHtml = (unsafe) => {
+            return unsafe.replace(/[&<>"']/g, function(m){ return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'})[m]; });
+        };
 
-        // Render month & week navigation
+        /* =======================
+           Renders (weeks, deadlines, clients)
+           ======================= */
         const renderMonthNavigation = () => {
             currentMonthSpan.textContent = currentMonth.toLocaleString('default',{month:'long',year:'numeric'});
         };
@@ -384,16 +459,15 @@
             }
         };
 
-        // Open task editor for a given week and type ('daily'|'weekly'|'monthly')
-        let taskEditorContext = { monthKey: null, week: null, type: null };
+        // Task editor context & open/close
+        let taskEditorContext = { monthKey:null, week:null, type:null };
         const openTaskEditor = (monthKey, week, type) => {
             taskEditorContext = { monthKey, week, type };
             const weekData = plannerData[monthKey].weeks[week] || getDefaultTasks(week);
             const tasks = weekData.tasks[type];
             taskEditTitle.textContent = `${weekData.title} — ${type[0].toUpperCase()+type.slice(1)} Tasks`;
-            // populate list
             taskEditList.innerHTML = '';
-            tasks.forEach((t, idx) => {
+            tasks.forEach((t, idx)=>{
                 const div = document.createElement('div');
                 div.className = 'task-edit-item';
                 div.dataset.index = idx;
@@ -415,79 +489,12 @@
             newTaskPriority.value = 'medium';
             newTaskText.focus();
         };
-
         const closeTaskEditor = () => {
             taskEditModal.style.display = 'none';
             taskEditorContext = { monthKey:null, week:null, type:null };
         };
 
-        // Utility to escape HTML in values (prevent breaking attributes)
-        function escapeHtml(unsafe) {
-            return unsafe.replace(/[&<>"']/g, function(m){ return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'})[m]; });
-        }
-
-        // Add new task inside editor (just pushing to DOM; final save will persist)
-        addNewTaskBtn.addEventListener('click', () => {
-            const text = newTaskText.value.trim();
-            const pr = newTaskPriority.value;
-            if (!text) return;
-            const div = document.createElement('div');
-            div.className = 'task-edit-item';
-            div.innerHTML = `
-                <input type="text" class="rounded-md border-gray-300 p-2" value="${escapeHtml(text)}">
-                <select class="task-priority rounded-md p-2">
-                    <option value="low" ${pr==='low'?'selected':''}>Low</option>
-                    <option value="medium" ${pr==='medium'?'selected':''}>Medium</option>
-                    <option value="high" ${pr==='high'?'selected':''}>High</option>
-                </select>
-                <label class="flex items-center gap-2"><input type="checkbox" class="task-completed"> Done</label>
-                <button class="ml-2 remove-task-btn text-red-500">Delete</button>
-            `;
-            taskEditList.appendChild(div);
-            newTaskText.value = '';
-            newTaskText.focus();
-        });
-
-        // Delete task from editor (delegated)
-        taskEditList.addEventListener('click', (e) => {
-            if (e.target.classList.contains('remove-task-btn')) {
-                const item = e.target.closest('.task-edit-item');
-                item.remove();
-            }
-        });
-
-        // Close editor handlers
-        taskEditClose.addEventListener('click', closeTaskEditor);
-        taskEditCancel.addEventListener('click', closeTaskEditor);
-        window.addEventListener('click', (e) => { if (e.target === taskEditModal) closeTaskEditor(); });
-
-        // Save changes from editor back to plannerData
-        taskEditSave.addEventListener('click', () => {
-            const { monthKey, week, type } = taskEditorContext;
-            if (!monthKey || !week || !type) { closeTaskEditor(); return; }
-            const weekData = plannerData[monthKey].weeks[week] || getDefaultTasks(week);
-            const newTasks = Array.from(taskEditList.children).map(div => {
-                const text = div.querySelector('input[type="text"]').value.trim();
-                const priority = div.querySelector('.task-priority').value;
-                const completed = !!div.querySelector('.task-completed').checked;
-                return { text, priority, completed };
-            });
-            // Persist
-            weekData.tasks[type] = newTasks;
-            plannerData[monthKey].weeks[week] = weekData;
-            saveData(STORAGE_KEYS.PLANNER, plannerData);
-            // Re-render the current active week (if same month & week)
-            if (getMonthKey(currentMonth) === monthKey && activeWeek === week) {
-                renderWeekContent(week);
-            }
-            // Update monthly progress display
-            const monthProgress = calculateMonthlyProgress(plannerData[monthKey]);
-            monthlyProgressFill.style.width = `${monthProgress}%`;
-            monthlyProgressText.textContent = `${monthProgress}% Complete`;
-            closeTaskEditor();
-        });
-
-        // Render a week (includes adding "Edit Tasks" button to each card)
+        // Render week content (includes edit buttons)
         const renderWeekContent = (week) => {
             const monthKey = getMonthKey(currentMonth);
             const weekData = plannerData[monthKey].weeks[week] || getDefaultTasks(week);
@@ -562,10 +569,10 @@
             monthlyProgressFill.style.width = `${monthProgress}%`;
             monthlyProgressText.textContent = `${monthProgress}% Complete`;
 
-            // attach edit button listeners (delegated via contentContainer)
+            // attach edit button listeners
             Array.from(contentContainer.querySelectorAll('.edit-tasks-btn')).forEach(btn=>{
                 btn.addEventListener('click', (e)=>{
-                    const weekNum = parseInt(btn.dataset.week);
+                    const weekNum = parseInt(btn.dataset.week,10);
                     const type = btn.dataset.type;
                     openTaskEditor(getMonthKey(currentMonth), weekNum, type);
                 });
@@ -600,9 +607,9 @@
                     // update data order
                     const newOrder = Array.from(ul.children).map(li=>{
                         const idx = parseInt(li.dataset.index,10);
-                        return plannerData[monthKey].weeks[week].tasks[type][idx];
+                        return plannerData[getMonthKey(currentMonth)].weeks[week].tasks[type][idx];
                     });
-                    plannerData[monthKey].weeks[week].tasks[type] = newOrder;
+                    plannerData[getMonthKey(currentMonth)].weeks[week].tasks[type] = newOrder;
                     // reindex DOM dataset
                     Array.from(ul.children).forEach((li, idx)=> li.dataset.index = idx);
                     saveData(STORAGE_KEYS.PLANNER, plannerData);
@@ -610,7 +617,7 @@
             });
         };
 
-        // Deadline rendering
+        // Deadlines render
         const renderDeadlineList = () => {
             deadlineList.innerHTML = '';
             if (deadlines.length === 0) {
@@ -634,7 +641,7 @@
             });
         };
 
-        // Client table render & helpers
+        // Clients render
         const renderClientTable = (data) => {
             clientTableBody.innerHTML = '';
             if (data.length === 0) {
@@ -657,7 +664,6 @@
                 clientTableBody.appendChild(row);
             });
         };
-
         const filterAndRenderClients = () => {
             const mapped = clientData.map((c,i)=>({...c,__idx:i}));
             let filtered = [...mapped];
@@ -666,10 +672,11 @@
             renderClientTable(filtered);
         };
 
-        // Utility: show/hide error messages
         const showError = (id, show) => document.getElementById(id).classList.toggle('hidden', !show);
 
-        // Event listeners (navigation)
+        /* =======================
+           Event listeners (navigation, tasks, deadlines, clients)
+           ======================= */
         prevMonthBtn.addEventListener('click', () => {
             currentMonth.setMonth(currentMonth.getMonth()-1);
             const mKey = getMonthKey(currentMonth);
@@ -695,7 +702,6 @@
             saveData(STORAGE_KEYS.PLANNER, plannerData);
         });
 
-        // Week navigation click
         navigation.addEventListener('click', (e) => {
             if (e.target.classList.contains('nav-btn')) {
                 activeWeek = parseInt(e.target.dataset.week,10);
@@ -707,7 +713,7 @@
             }
         });
 
-        // Task checkbox changes (delegated)
+        // Task checkbox change
         contentContainer.addEventListener('change', (e) => {
             if (e.target.classList.contains('task-checkbox')) {
                 const li = e.target.closest('li');
@@ -732,7 +738,7 @@
             }
         });
 
-        // Deadline form
+        // Add deadline
         deadlineForm.addEventListener('submit', (e) => {
             e.preventDefault();
             const dateInput = document.getElementById('deadline-date');
@@ -763,7 +769,7 @@
             }
         });
 
-        // Client modal controls & actions
+        // Client modal
         addClientBtn.addEventListener('click', () => { addClientModal.style.display='flex'; newClientCompanyInput.focus(); });
         closeAddClientBtn.addEventListener('click', ()=> addClientModal.style.display='none');
         cancelNewClientBtn.addEventListener('click', ()=> addClientModal.style.display='none');
@@ -843,7 +849,63 @@
             });
         });
 
-        // Notifications for overdue deadlines (one-time on load)
+        // Task editor internals
+        addNewTaskBtn.addEventListener('click', () => {
+            const text = newTaskText.value.trim();
+            const pr = newTaskPriority.value;
+            if (!text) return;
+            const div = document.createElement('div');
+            div.className = 'task-edit-item';
+            div.innerHTML = `
+                <input type="text" class="rounded-md border-gray-300 p-2" value="${escapeHtml(text)}">
+                <select class="task-priority rounded-md p-2">
+                    <option value="low" ${pr==='low'?'selected':''}>Low</option>
+                    <option value="medium" ${pr==='medium'?'selected':''}>Medium</option>
+                    <option value="high" ${pr==='high'?'selected':''}>High</option>
+                </select>
+                <label class="flex items-center gap-2"><input type="checkbox" class="task-completed"> Done</label>
+                <button class="ml-2 remove-task-btn text-red-500">Delete</button>
+            `;
+            taskEditList.appendChild(div);
+            newTaskText.value = '';
+            newTaskText.focus();
+        });
+
+        // Remove task from editor (delegated)
+        taskEditList.addEventListener('click', (e) => {
+            if (e.target.classList.contains('remove-task-btn')) {
+                const item = e.target.closest('.task-edit-item');
+                if (item) item.remove();
+            }
+        });
+
+        // Close task editor
+        taskEditClose.addEventListener('click', closeTaskEditor);
+        taskEditCancel.addEventListener('click', closeTaskEditor);
+        window.addEventListener('click', (e)=> { if (e.target === taskEditModal) closeTaskEditor(); });
+
+        // Save task editor changes
+        taskEditSave.addEventListener('click', () => {
+            const { monthKey, week, type } = taskEditorContext;
+            if (!monthKey || !week || !type) { closeTaskEditor(); return; }
+            const weekData = plannerData[monthKey].weeks[week] || getDefaultTasks(week);
+            const newTasks = Array.from(taskEditList.children).map(div=>{
+                const text = div.querySelector('input[type="text"]').value.trim();
+                const priority = div.querySelector('.task-priority').value;
+                const completed = !!div.querySelector('.task-completed').checked;
+                return { text, priority, completed };
+            });
+            weekData.tasks[type] = newTasks;
+            plannerData[monthKey].weeks[week] = weekData;
+            saveData(STORAGE_KEYS.PLANNER, plannerData);
+            if (getMonthKey(currentMonth) === monthKey && activeWeek === week) renderWeekContent(week);
+            const monthProgress = calculateMonthlyProgress(plannerData[monthKey]);
+            monthlyProgressFill.style.width = `${monthProgress}%`;
+            monthlyProgressText.textContent = `${monthProgress}% Complete`;
+            closeTaskEditor();
+        });
+
+        // Notifications for overdue deadlines (request once)
         if (window.Notification && Notification.permission === 'default') Notification.requestPermission();
         if (window.Notification && Notification.permission === 'granted') {
             const today = new Date().setHours(0,0,0,0);
@@ -856,23 +918,123 @@
             });
         }
 
-        // Initial renders
+        /* =======================
+           Music modal: render, add, edit, delete, open link
+           ======================= */
+        const renderGenres = () => {
+            genresListEl.innerHTML = '';
+            musicGenres.forEach((g, idx) => {
+                const row = document.createElement('div');
+                row.className = 'genre-row bg-gray-50 p-2 rounded-lg';
+                row.dataset.index = idx;
+                row.innerHTML = `
+                    <div class="flex-1">
+                        <a href="#" class="genre-link font-medium">${escapeHtml(g.name)}</a>
+                        <div class="small-muted">${escapeHtml(g.url)}</div>
+                    </div>
+                    <div class="genre-actions flex items-center">
+                        <button class="open-genre-btn bg-green-500 text-white py-1 px-2 rounded-md">Open</button>
+                        <button class="edit-genre-btn bg-yellow-300 text-black py-1 px-2 rounded-md">Edit</button>
+                        <button class="delete-genre-btn bg-red-400 text-white py-1 px-2 rounded-md">Delete</button>
+                    </div>
+                `;
+                genresListEl.appendChild(row);
+            });
+        };
+
+        // Open music modal
+        const openMusicModal = () => {
+            renderGenres();
+            musicModal.style.display = 'flex';
+        };
+        // Close music modal
+        const closeMusicModal = () => {
+            musicModal.style.display = 'none';
+        };
+
+        // Music button handlers
+        musicBtn.addEventListener('click', openMusicModal);
+        musicClose.addEventListener('click', closeMusicModal);
+        closeMusicBtn.addEventListener('click', closeMusicModal);
+        window.addEventListener('click', (e)=> { if (e.target === musicModal) closeMusicModal(); });
+
+        // Add new genre
+        addGenreBtn.addEventListener('click', () => {
+            const name = (newGenreName.value || '').trim();
+            const url = (newGenreLink.value || '').trim();
+            if (!name) { newGenreName.focus(); return; }
+            const linkToSave = url || `https://www.youtube.com/results?search_query=${encodeURIComponent(name)}`;
+            musicGenres.push({ name, url: linkToSave });
+            saveData(STORAGE_KEYS.MUSIC, musicGenres);
+            newGenreName.value = '';
+            newGenreLink.value = '';
+            renderGenres();
+        });
+
+        // Delegated genre actions (open, edit, delete)
+        genresListEl.addEventListener('click', (e) => {
+            const row = e.target.closest('.genre-row');
+            if (!row) return;
+            const idx = parseInt(row.dataset.index,10);
+            if (e.target.classList.contains('open-genre-btn')) {
+                const url = musicGenres[idx].url;
+                window.open(url, '_blank', 'noopener');
+            } else if (e.target.classList.contains('delete-genre-btn')) {
+                if (!confirm(`Delete genre "${musicGenres[idx].name}"?`)) return;
+                musicGenres.splice(idx,1);
+                saveData(STORAGE_KEYS.MUSIC, musicGenres);
+                renderGenres();
+            } else if (e.target.classList.contains('edit-genre-btn')) {
+                // open in-place edit UI
+                const g = musicGenres[idx];
+                const editDiv = document.createElement('div');
+                editDiv.className = 'grid grid-cols-1 md:grid-cols-3 gap-2 w-full';
+                editDiv.innerHTML = `
+                    <input type="text" class="rounded-md p-2 md:col-span-2 edit-genre-name" value="${escapeHtml(g.name)}">
+                    <input type="text" class="rounded-md p-2 edit-genre-url" value="${escapeHtml(g.url)}">
+                    <div class="md:col-span-3 flex gap-2 justify-end mt-2">
+                        <button class="save-genre-btn bg-[#10b981] text-white py-1 px-3 rounded-md">Save</button>
+                        <button class="cancel-genre-edit-btn bg-gray-200 text-black py-1 px-3 rounded-md">Cancel</button>
+                    </div>
+                `;
+                // replace the row content temporarily
+                row.innerHTML = '';
+                row.appendChild(editDiv);
+
+                // save/cancel handlers (delegated on the editDiv)
+                editDiv.addEventListener('click', function handler(ev){
+                    if (ev.target.classList.contains('save-genre-btn')) {
+                        const newName = editDiv.querySelector('.edit-genre-name').value.trim();
+                        const newUrl = editDiv.querySelector('.edit-genre-url').value.trim();
+                        if (!newName) { alert('Name cannot be empty'); return; }
+                        musicGenres[idx] = { name: newName, url: newUrl || `https://www.youtube.com/results?search_query=${encodeURIComponent(newName)}` };
+                        saveData(STORAGE_KEYS.MUSIC, musicGenres);
+                        renderGenres();
+                    } else if (ev.target.classList.contains('cancel-genre-edit-btn')) {
+                        renderGenres();
+                    }
+                }, { once: true });
+            }
+        });
+
+        /* =======================
+           final initial renders
+           ======================= */
         renderMonthNavigation();
         renderWeekNavigation();
         renderWeekContent(activeWeek);
         renderDeadlineList();
         filterAndRenderClients();
 
-        // expose some functions for inline handlers
+        // Expose removeDeadline for inline use (if needed)
         window.removeDeadline = function(idx){
             if (typeof idx !== 'number') return;
             deadlines.splice(idx,1);
             saveData(STORAGE_KEYS.DEADLINES, deadlines);
             renderDeadlineList();
         };
-        window.editTaskExternal = openTaskEditor; // optional external use
 
-        // end DOMContentLoaded
+        // End DOMContentLoaded
     });
     </script>
 </body>
