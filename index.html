@@ -56,39 +56,32 @@
 </head>
 <body class="antialiased text-gray-900">
     <div class="container mx-auto p-4 sm:p-6 md:p-8 max-w-7xl">
-        <!-- Header: centered heading + top-right music button -->
         <header class="text-center mb-8 relative">
             <h1 class="text-4xl font-bold text-gray-800">Monthly Work Planner</h1>
             <p class="text-lg text-gray-600 mt-2 w-full">A dynamic and interactive schedule to keep you organized.</p>
 
-            <!-- Music button placed top-right -->
             <div class="music-top-right absolute right-0 top-0">
                 <button id="musicBtn" class="music-btn mr-2" title="Open Music genres">🎵 Music</button>
             </div>
         </header>
 
         <main>
-            <!-- Month navigation -->
             <nav id="month-navigation" class="flex justify-center items-center bg-white rounded-xl shadow-sm p-2 mb-4">
                 <button id="prev-month" class="nav-btn px-4 py-2 text-gray-700">&lt; Prev</button>
                 <span id="current-month" class="px-4 py-2 font-semibold"></span>
                 <button id="next-month" class="nav-btn px-4 py-2 text-gray-700">Next &gt;</button>
             </nav>
 
-            <!-- Week navigation -->
             <nav id="week-navigation" role="tablist" class="flex justify-center items-center bg-white rounded-xl shadow-sm p-2 mb-8"></nav>
 
-            <!-- Monthly progress -->
             <div id="monthly-progress" class="mb-8 bg-white p-6 rounded-xl shadow-sm">
                 <h2 class="text-2xl font-bold text-gray-800 mb-4">Monthly Progress</h2>
                 <div class="progress-bar mb-2"><div id="monthly-progress-fill" class="progress-fill" style="width:0%"></div></div>
                 <p id="monthly-progress-text" class="text-sm text-gray-600 text-center">0% Complete</p>
             </div>
 
-            <!-- Planner content -->
             <div id="planner-content"></div>
 
-            <!-- Deadlines section -->
             <section id="deadlines-section" class="mt-10 bg-white p-6 rounded-xl shadow-sm">
                 <h2 class="text-2xl font-bold text-gray-800 mb-4 border-b-2 border-gray-200 pb-2">Upcoming Deadlines</h2>
                 <p class="text-gray-600 mb-6">Use this section to track specific deadlines for projects and tasks. Add new deadlines using the form below.</p>
@@ -116,7 +109,6 @@
                 </div>
             </section>
 
-            <!-- Clients section -->
             <section id="clients-section" class="mt-10 bg-white p-6 rounded-xl shadow-sm">
                 <h2 class="text-2xl font-bold text-gray-800 mb-4 border-b-2 border-gray-200 pb-2">Active Clients</h2>
                 <div class="flex justify-between items-center mb-4">
@@ -150,7 +142,15 @@
         </main>
     </div>
 
-    <!-- Add Client Modal -->
+    <div id="welcome-modal" class="modal" style="display:flex;">
+        <div class="modal-content text-center p-8">
+            <h2 class="text-3xl font-bold text-gray-800 mb-2">Welcome back, Great Conqueror.</h2>
+            <div id="daily-quote-container" class="text-lg text-gray-600 italic mt-4 mb-6">
+                </div>
+            <button id="close-welcome-modal" class="bg-[#E42642] text-white font-semibold py-2 px-8 rounded-lg hover:bg-opacity-90 transition-colors">Let's Go!</button>
+        </div>
+    </div>
+
     <div id="add-client-modal" class="modal">
         <div class="modal-content p-6 rounded-xl shadow-lg">
             <span id="close-modal-btn" class="close-btn">&times;</span>
@@ -174,7 +174,6 @@
         </div>
     </div>
 
-    <!-- Task Editor Modal -->
     <div id="task-edit-modal" class="modal">
         <div class="modal-content">
             <span id="task-edit-close" class="close-btn">&times;</span>
@@ -198,7 +197,6 @@
         </div>
     </div>
 
-    <!-- Music Modal -->
     <div id="music-modal" class="modal">
         <div class="modal-content">
             <span id="music-close" class="close-btn">&times;</span>
@@ -221,20 +219,52 @@
     <script>
     document.addEventListener('DOMContentLoaded', () => {
         /* =======================
-           Storage keys
-           ======================= */
+         * Storage keys
+         * ======================= */
         const STORAGE_KEYS = {
             DEADLINES: 'monthlyPlannerDeadlines',
             CLIENTS: 'monthlyPlannerClients',
             ACTIVE_MONTH: 'monthlyPlannerActiveMonth',
             ACTIVE_WEEK: 'monthlyPlannerActiveWeek',
             PLANNER: 'monthlyPlannerData',
-            MUSIC: 'monthlyPlannerMusicGenres' // new
+            MUSIC: 'monthlyPlannerMusicGenres'
         };
+        
+        /* =======================
+         * Quotes for Welcome Modal
+         * ======================= */
+        const quotes = [
+            { quote: "The only way to do great work is to love what you do.", author: "Steve Jobs" },
+            { quote: "Success is not final, failure is not fatal: it is the courage to continue that counts.", author: "Winston Churchill" },
+            { quote: "Believe you can and you're halfway there.", author: "Theodore Roosevelt" },
+            { quote: "The secret of getting ahead is getting started.", author: "Mark Twain" },
+            { quote: "Your time is limited, don't waste it living someone else's life.", author: "Steve Jobs" },
+            { quote: "The future belongs to those who believe in the beauty of their dreams.", author: "Eleanor Roosevelt" },
+            { quote: "It does not matter how slowly you go as long as you do not stop.", author: "Confucius" },
+            { quote: "Everything you’ve ever wanted is on the other side of fear.", author: "George Addair" },
+            { quote: "The best time to plant a tree was 20 years ago. The second best time is now.", author: "Chinese Proverb" },
+            { quote: "What you get by achieving your goals is not as important as what you become by achieving your goals.", author: "Zig Ziglar" },
+            { quote: "Strive not to be a success, but rather to be of value.", author: "Albert Einstein" },
+            { quote: "The mind is everything. What you think you become.", author: "Buddha" },
+            { quote: "An unexamined life is not worth living.", author: "Socrates" },
+            { quote: "Eighty percent of success is showing up.", author: "Woody Allen" },
+            { quote: "The only person you are destined to become is the person you decide to be.", author: "Ralph Waldo Emerson" },
+            { quote: "Go confidently in the direction of your dreams. Live the life you've imagined.", author: "Henry David Thoreau" },
+            { quote: "The journey of a thousand miles begins with a single step.", author: "Lao Tzu" },
+            { quote: "Act as if what you do makes a difference. It does.", author: "William James" },
+            { quote: "Hardships often prepare ordinary people for an extraordinary destiny.", author: "C.S. Lewis" },
+            { quote: "Turn your wounds into wisdom.", author: "Oprah Winfrey" },
+            { quote: "The simple act of paying positive attention to people has a great deal to do with productivity.", author: "Tom Peters" },
+            { quote: "You can't use up creativity. The more you use, the more you have.", author: "Maya Angelou" },
+            { quote: "The most difficult thing is the decision to act, the rest is merely tenacity.", author: "Amelia Earhart" },
+            { quote: "I attribute my success to this: I never gave or took any excuse.", author: "Florence Nightingale" },
+            { quote: "You miss 100% of the shots you don't take.", author: "Wayne Gretzky" },
+            { quote: "Build your own dreams, or someone else will hire you to build theirs.", author: "Farrah Gray" }
+        ];
 
         /* =======================
-           App state
-           ======================= */
+         * App state
+         * ======================= */
         let lastRemovedClient = null;
         let sortDirection = {};
         let currentFilter = 'all';
@@ -243,8 +273,8 @@
         let activeWeek = 1;
 
         /* =======================
-           Default tasks (same as original)
-           ======================= */
+         * Default tasks (same as original)
+         * ======================= */
         const getDefaultTasks = (week) => {
             const defaults = [
                 null,
@@ -321,8 +351,8 @@
         };
 
         /* =======================
-           Storage helpers
-           ======================= */
+         * Storage helpers
+         * ======================= */
         const loadData = (key) => {
             const data = localStorage.getItem(key);
             return data ? JSON.parse(data) : null;
@@ -330,8 +360,8 @@
         const saveData = (key, data) => localStorage.setItem(key, JSON.stringify(data));
 
         /* =======================
-           Initialize stored data
-           ======================= */
+         * Initialize stored data
+         * ======================= */
         let plannerData = loadData(STORAGE_KEYS.PLANNER) || {};
         const monthKeyInit = currentMonth.toISOString().slice(0,7);
         if (!plannerData[monthKeyInit]) plannerData[monthKeyInit] = { weeks: [null, getDefaultTasks(1), getDefaultTasks(2), getDefaultTasks(3), getDefaultTasks(4)] };
@@ -361,8 +391,8 @@
         let musicGenres = loadData(STORAGE_KEYS.MUSIC) || defaultGenres.slice();
 
         /* =======================
-           DOM references
-           ======================= */
+         * DOM references
+         * ======================= */
         const prevMonthBtn = document.getElementById('prev-month');
         const nextMonthBtn = document.getElementById('next-month');
         const currentMonthSpan = document.getElementById('current-month');
@@ -406,16 +436,53 @@
         const newGenreName = document.getElementById('new-genre-name');
         const newGenreLink = document.getElementById('new-genre-link');
         const addGenreBtn = document.getElementById('add-genre-btn');
+        
+        // Welcome modal refs
+        const welcomeModal = document.getElementById('welcome-modal');
+        const dailyQuoteContainer = document.getElementById('daily-quote-container');
+        const closeWelcomeModalBtn = document.getElementById('close-welcome-modal');
+
 
         /* =======================
-           helper functions
-           ======================= */
+         * helper functions
+         * ======================= */
+        const getDayOfYear = () => {
+            const now = new Date();
+            const start = new Date(now.getFullYear(), 0, 0);
+            const diff = now - start;
+            const oneDay = 1000 * 60 * 60 * 24;
+            return Math.floor(diff / oneDay);
+        };
+
+        const setupWelcomeModal = () => {
+            // Select a quote based on the day of the year
+            const dayIndex = getDayOfYear();
+            const quoteIndex = dayIndex % quotes.length;
+            const { quote, author } = quotes[quoteIndex];
+            
+            // Display the quote
+            dailyQuoteContainer.innerHTML = `"${quote}"<br><span class="text-base not-italic font-medium text-gray-500 mt-2 block">- ${author}</span>`;
+            
+            // Function to close the modal
+            const closeModal = () => {
+                welcomeModal.style.display = 'none';
+            };
+
+            // Event listeners to close
+            closeWelcomeModalBtn.addEventListener('click', closeModal);
+            welcomeModal.addEventListener('click', (e) => {
+                if (e.target === welcomeModal) {
+                    closeModal();
+                }
+            });
+        };
+         
         const getMonthKey = date => date.toISOString().slice(0,7);
         const getWeeksInMonth = (date) => {
             const year = date.getFullYear();
             const month = date.getMonth();
             const firstDay = new Date(year, month, 1).getDay();
-            const daysInMonth = new Date(year, month+1, 0).getDate();
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
             return Math.ceil((daysInMonth + firstDay) / 7);
         };
         const calculateProgress = tasks => {
@@ -432,29 +499,29 @@
                 total += all.length;
                 done += all.filter(t=>t.completed).length;
             });
-            return total>0?Math.round((done/total)*100):0;
+            return total > 0 ? Math.round((done / total) * 100) : 0;
         };
         const escapeHtml = (unsafe) => {
             return unsafe.replace(/[&<>"']/g, function(m){ return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'})[m]; });
         };
 
         /* =======================
-           Renders (weeks, deadlines, clients)
-           ======================= */
+         * Renders (weeks, deadlines, clients)
+         * ======================= */
         const renderMonthNavigation = () => {
             currentMonthSpan.textContent = currentMonth.toLocaleString('default',{month:'long',year:'numeric'});
         };
         const renderWeekNavigation = () => {
             navigation.innerHTML = '';
             const weeks = getWeeksInMonth(currentMonth);
-            for (let i=1;i<=weeks;i++){
+            for (let i = 1; i <= weeks; i++){
                 const btn = document.createElement('button');
                 btn.dataset.week = i;
                 btn.className = 'nav-btn w-1/4 py-3 px-2 text-center rounded-lg text-gray-700';
                 btn.role = 'tab';
-                btn.ariaSelected = (i===activeWeek)?'true':'false';
+                btn.ariaSelected = (i === activeWeek) ? 'true' : 'false';
                 btn.textContent = `Week ${i}`;
-                if (i===activeWeek) btn.classList.add('active');
+                if (i === activeWeek) btn.classList.add('active');
                 navigation.appendChild(btn);
             }
         };
@@ -465,7 +532,7 @@
             taskEditorContext = { monthKey, week, type };
             const weekData = plannerData[monthKey].weeks[week] || getDefaultTasks(week);
             const tasks = weekData.tasks[type];
-            taskEditTitle.textContent = `${weekData.title} — ${type[0].toUpperCase()+type.slice(1)} Tasks`;
+            taskEditTitle.textContent = `${weekData.title} — ${type[0].toUpperCase() + type.slice(1)} Tasks`;
             taskEditList.innerHTML = '';
             tasks.forEach((t, idx)=>{
                 const div = document.createElement('div');
@@ -474,11 +541,11 @@
                 div.innerHTML = `
                     <input type="text" class="rounded-md border-gray-300 p-2" value="${escapeHtml(t.text)}">
                     <select class="task-priority rounded-md p-2">
-                        <option value="low" ${t.priority==='low'?'selected':''}>Low</option>
-                        <option value="medium" ${t.priority==='medium'?'selected':''}>Medium</option>
-                        <option value="high" ${t.priority==='high'?'selected':''}>High</option>
+                        <option value="low" ${t.priority === 'low' ? 'selected' : ''}>Low</option>
+                        <option value="medium" ${t.priority === 'medium' ? 'selected' : ''}>Medium</option>
+                        <option value="high" ${t.priority === 'high' ? 'selected' : ''}>High</option>
                     </select>
-                    <label class="flex items-center gap-2"><input type="checkbox" class="task-completed" ${t.completed?'checked':''}> Done</label>
+                    <label class="flex items-center gap-2"><input type="checkbox" class="task-completed" ${t.completed ? 'checked' : ''}> Done</label>
                     <button class="ml-2 remove-task-btn text-red-500">Delete</button>
                 `;
                 taskEditList.appendChild(div);
@@ -497,6 +564,9 @@
         // Render week content (includes edit buttons)
         const renderWeekContent = (week) => {
             const monthKey = getMonthKey(currentMonth);
+            if (!plannerData[monthKey]) {
+                plannerData[monthKey] = { weeks: [] };
+            }
             const weekData = plannerData[monthKey].weeks[week] || getDefaultTasks(week);
             plannerData[monthKey].weeks[week] = weekData;
             const progress = calculateProgress(weekData.tasks);
@@ -512,8 +582,8 @@
                         <ul id="monthly-tasks-${week}" class="text-[var(--text-color)]" draggable="true">
                             ${weekData.tasks.monthly.map((task,i)=>`
                                 <li data-type="monthly" data-index="${i}">
-                                    <input type="checkbox" id="task-${week}-monthly-${i}" class="task-checkbox mr-2" ${task.completed?'checked':''}>
-                                    <label for="task-${week}-monthly-${i}" class="${task.completed?'completed':''}">${task.text}</label>
+                                    <input type="checkbox" id="task-${week}-monthly-${i}" class="task-checkbox mr-2" ${task.completed ? 'checked' : ''}>
+                                    <label for="task-${week}-monthly-${i}" class="${task.completed ? 'completed' : ''}">${escapeHtml(task.text)}</label>
                                 </li>
                             `).join('')}
                         </ul>
@@ -523,12 +593,13 @@
 
             contentContainer.innerHTML = `
                 <section id="week-${week}-content" class="bg-gray-100 p-6 rounded-xl">
-                    <h2 class="text-2xl font-bold mb-4 text-center">${weekData.title}</h2>
+                    <h2 class="text-2xl font-bold mb-4 text-center">${escapeHtml(weekData.title)}</h2>
                     <div class="mb-4">
                         <div class="progress-bar"><div class="progress-fill" style="width:${progress}%"></div></div>
                         <p class="text-sm text-gray-600 mt-1 text-center">${progress}% Complete</p>
                     </div>
-                    <div class="grid grid-cols-1 md:grid-cols-2 ${monthlyTasksHtml ? 'lg:grid-cols-3' : ''} gap-6">
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div class="task-card bg-[var(--card-bg)] p-6 rounded-xl shadow-sm">
                             <div class="card-header mb-3">
                                 <h3 class="text-xl font-semibold">Daily Tasks</h3>
@@ -537,504 +608,312 @@
                             <ul id="daily-tasks-${week}" class="text-[var(--text-color)]" draggable="true">
                                 ${weekData.tasks.daily.map((task,i)=>`
                                     <li data-type="daily" data-index="${i}">
-                                        <input type="checkbox" id="task-${week}-daily-${i}" class="task-checkbox mr-2" ${task.completed?'checked':''}>
-                                        <label for="task-${week}-daily-${i}" class="${task.completed?'completed':''}">${task.text}</label>
+                                        <input type="checkbox" id="task-${week}-daily-${i}" class="task-checkbox mr-2" ${task.completed ? 'checked' : ''}>
+                                        <label for="task-${week}-daily-${i}" class="${task.completed ? 'completed' : ''}">${escapeHtml(task.text)}</label>
                                     </li>
                                 `).join('')}
                             </ul>
                         </div>
-
                         <div class="task-card bg-[var(--card-bg)] p-6 rounded-xl shadow-sm">
-                            <div class="card-header mb-3">
+                             <div class="card-header mb-3">
                                 <h3 class="text-xl font-semibold">Weekly Tasks</h3>
                                 <button class="edit-tasks-btn" data-week="${week}" data-type="weekly">Edit Tasks</button>
                             </div>
                             <ul id="weekly-tasks-${week}" class="text-[var(--text-color)]" draggable="true">
                                 ${weekData.tasks.weekly.map((task,i)=>`
                                     <li data-type="weekly" data-index="${i}">
-                                        <input type="checkbox" id="task-${week}-weekly-${i}" class="task-checkbox mr-2" ${task.completed?'checked':''}>
-                                        <label for="task-${week}-weekly-${i}" class="${task.completed?'completed':''}">${task.text}</label>
+                                        <input type="checkbox" id="task-${week}-weekly-${i}" class="task-checkbox mr-2" ${task.completed ? 'checked' : ''}>
+                                        <label for="task-${week}-weekly-${i}" class="${task.completed ? 'completed' : ''}">${escapeHtml(task.text)}</label>
                                     </li>
                                 `).join('')}
                             </ul>
                         </div>
-
-                        ${monthlyTasksHtml}
                     </div>
+                    ${monthlyTasksHtml ? `<div class="mt-6">${monthlyTasksHtml}</div>` : ''}
                 </section>
             `;
-
-            // monthly progress update
-            const monthProgress = calculateMonthlyProgress(plannerData[monthKey]);
-            monthlyProgressFill.style.width = `${monthProgress}%`;
-            monthlyProgressText.textContent = `${monthProgress}% Complete`;
-
-            // attach edit button listeners
-            Array.from(contentContainer.querySelectorAll('.edit-tasks-btn')).forEach(btn=>{
-                btn.addEventListener('click', (e)=>{
-                    const weekNum = parseInt(btn.dataset.week,10);
-                    const type = btn.dataset.type;
-                    openTaskEditor(getMonthKey(currentMonth), weekNum, type);
-                });
-            });
-
-            // Drag & drop within lists
-            let draggedItem = null;
-            ['daily','weekly','monthly'].forEach(type=>{
-                const ul = document.getElementById(`${type}-tasks-${week}`);
-                if (!ul) return;
-                ul.addEventListener('dragstart', (e)=>{
-                    draggedItem = e.target.closest('li');
-                    if (draggedItem) draggedItem.classList.add('opacity-50');
-                    e.dataTransfer.effectAllowed = 'move';
-                    e.dataTransfer.setData('text/plain','');
-                });
-                ul.addEventListener('dragend', ()=>{
-                    if (draggedItem) draggedItem.classList.remove('opacity-50');
-                    draggedItem = null;
-                });
-                ul.addEventListener('dragover', (e)=>{
-                    e.preventDefault();
-                    e.dataTransfer.dropEffect = 'move';
-                });
-                ul.addEventListener('drop', (e)=>{
-                    e.preventDefault();
-                    if (!draggedItem) return;
-                    const targetLi = e.target.closest('li');
-                    if (targetLi && draggedItem !== targetLi) {
-                        ul.insertBefore(draggedItem, targetLi.nextSibling);
-                    }
-                    // update data order
-                    const newOrder = Array.from(ul.children).map(li=>{
-                        const idx = parseInt(li.dataset.index,10);
-                        return plannerData[getMonthKey(currentMonth)].weeks[week].tasks[type][idx];
-                    });
-                    plannerData[getMonthKey(currentMonth)].weeks[week].tasks[type] = newOrder;
-                    // reindex DOM dataset
-                    Array.from(ul.children).forEach((li, idx)=> li.dataset.index = idx);
-                    saveData(STORAGE_KEYS.PLANNER, plannerData);
-                });
-            });
         };
 
-        // Deadlines render
-        const renderDeadlineList = () => {
+        const updateMonthlyProgress = () => {
+            const monthKey = getMonthKey(currentMonth);
+            const monthData = plannerData[monthKey];
+            if (!monthData) return;
+            const progress = calculateMonthlyProgress(monthData);
+            monthlyProgressFill.style.width = `${progress}%`;
+            monthlyProgressText.textContent = `${progress}% Complete`;
+        };
+        
+        const renderDeadlines = () => {
             deadlineList.innerHTML = '';
-            if (deadlines.length === 0) {
-                deadlineList.innerHTML = '<li class="p-4 bg-gray-100 rounded-lg text-gray-500">No deadlines added yet.</li>';
-                return;
-            }
-            const today = new Date().setHours(0,0,0,0);
-            deadlines.forEach((dl, idx) => {
-                const dlDate = new Date(dl.date).setHours(0,0,0,0);
-                const isOverdue = dlDate < today;
-                const li = document.createElement('li');
-                li.className = `p-4 bg-gray-100 rounded-lg flex items-center justify-between ${isOverdue? 'overdue':''}`;
-                li.innerHTML = `
-                    <div>
-                        <span class="font-semibold text-gray-700">${new Date(dl.date).toLocaleDateString(undefined,{year:'numeric',month:'long',day:'numeric'})}:</span>
-                        <span class="text-gray-600"> ${dl.task} - ${dl.client}</span>
-                    </div>
-                    <button data-index="${idx}" class="remove-deadline text-red-400 hover:text-red-600 font-bold text-xl cursor-pointer">&times;</button>
-                `;
-                deadlineList.appendChild(li);
-            });
-        };
+            deadlines
+                .sort((a,b) => new Date(a.date) - new Date(b.date))
+                .forEach((d, i) => {
+                    const li = document.createElement('li');
+                    const deadlineDate = new Date(d.date + 'T00:00:00'); // Treat date as local
+                    const today = new Date();
+                    today.setHours(0,0,0,0);
+                    const isOverdue = deadlineDate < today;
 
-        // Clients render
-        const renderClientTable = (data) => {
-            clientTableBody.innerHTML = '';
-            if (data.length === 0) {
-                clientTableBody.innerHTML = '<tr><td colspan="4" class="p-4 text-center text-gray-500">No clients found.</td></tr>';
-                return;
-            }
-            data.forEach(client => {
-                const row = document.createElement('tr');
-                row.className = `border-b border-gray-200 ${client.complete ? 'completed' : ''}`;
-                row.innerHTML = `
-                    <td class="p-4 py-3 align-top">${client.company}</td>
-                    <td class="p-4 py-3 align-top">${client.services}</td>
-                    <td class="p-4 py-3 align-top text-center">
-                        <input data-index="${client.__idx}" type="checkbox" class="w-4 h-4 client-complete-checkbox" ${client.complete ? 'checked' : ''}>
-                    </td>
-                    <td class="p-4 py-3 align-top text-center">
-                        <button data-index="${client.__idx}" class="remove-client-btn text-red-400 hover:text-red-600 font-bold text-xl cursor-pointer">&times;</button>
-                    </td>
-                `;
-                clientTableBody.appendChild(row);
-            });
-        };
-        const filterAndRenderClients = () => {
-            const mapped = clientData.map((c,i)=>({...c,__idx:i}));
-            let filtered = [...mapped];
-            if (currentFilter === 'complete') filtered = mapped.filter(c=>c.complete);
-            if (currentFilter === 'incomplete') filtered = mapped.filter(c=>!c.complete);
-            renderClientTable(filtered);
-        };
-
-        const showError = (id, show) => document.getElementById(id).classList.toggle('hidden', !show);
-
-        /* =======================
-           Event listeners (navigation, tasks, deadlines, clients)
-           ======================= */
-        prevMonthBtn.addEventListener('click', () => {
-            currentMonth.setMonth(currentMonth.getMonth()-1);
-            const mKey = getMonthKey(currentMonth);
-            if (!plannerData[mKey]) plannerData[mKey] = { weeks: [] };
-            activeWeek = 1;
-            renderMonthNavigation();
-            renderWeekNavigation();
-            renderWeekContent(activeWeek);
-            saveData(STORAGE_KEYS.ACTIVE_MONTH, currentMonth.toISOString());
-            saveData(STORAGE_KEYS.ACTIVE_WEEK, activeWeek);
-            saveData(STORAGE_KEYS.PLANNER, plannerData);
-        });
-        nextMonthBtn.addEventListener('click', () => {
-            currentMonth.setMonth(currentMonth.getMonth()+1);
-            const mKey = getMonthKey(currentMonth);
-            if (!plannerData[mKey]) plannerData[mKey] = { weeks: [] };
-            activeWeek = 1;
-            renderMonthNavigation();
-            renderWeekNavigation();
-            renderWeekContent(activeWeek);
-            saveData(STORAGE_KEYS.ACTIVE_MONTH, currentMonth.toISOString());
-            saveData(STORAGE_KEYS.ACTIVE_WEEK, activeWeek);
-            saveData(STORAGE_KEYS.PLANNER, plannerData);
-        });
-
-        navigation.addEventListener('click', (e) => {
-            if (e.target.classList.contains('nav-btn')) {
-                activeWeek = parseInt(e.target.dataset.week,10);
-                document.querySelectorAll('.nav-btn').forEach(btn => { btn.classList.remove('active'); btn.ariaSelected = 'false'; });
-                e.target.classList.add('active');
-                e.target.ariaSelected = 'true';
-                renderWeekContent(activeWeek);
-                saveData(STORAGE_KEYS.ACTIVE_WEEK, activeWeek);
-            }
-        });
-
-        // Task checkbox change
-        contentContainer.addEventListener('change', (e) => {
-            if (e.target.classList.contains('task-checkbox')) {
-                const li = e.target.closest('li');
-                if (!li) return;
-                const type = li.dataset.type;
-                const idx = parseInt(li.dataset.index,10);
-                const mKey = getMonthKey(currentMonth);
-                plannerData[mKey].weeks[activeWeek].tasks[type][idx].completed = e.target.checked;
-                saveData(STORAGE_KEYS.PLANNER, plannerData);
-                const lbl = li.querySelector('label');
-                if (lbl) lbl.classList.toggle('completed', e.target.checked);
-
-                // update progress UI
-                const progress = calculateProgress(plannerData[mKey].weeks[activeWeek].tasks);
-                const fill = contentContainer.querySelector('.progress-fill');
-                const text = contentContainer.querySelector('.text-sm');
-                if (fill) fill.style.width = `${progress}%`;
-                if (text) text.textContent = `${progress}% Complete`;
-                const monthProgress = calculateMonthlyProgress(plannerData[mKey]);
-                monthlyProgressFill.style.width = `${monthProgress}%`;
-                monthlyProgressText.textContent = `${monthProgress}% Complete`;
-            }
-        });
-
-        // Add deadline
-        deadlineForm.addEventListener('submit', (e) => {
-            e.preventDefault();
-            const dateInput = document.getElementById('deadline-date');
-            const taskInput = document.getElementById('deadline-task');
-            const clientInput = document.getElementById('deadline-client');
-            let valid = true;
-            showError('deadline-date-error', !dateInput.value);
-            showError('deadline-task-error', !taskInput.value.trim());
-            showError('deadline-client-error', !clientInput.value.trim());
-            if (!dateInput.value || !taskInput.value.trim() || !clientInput.value.trim()) valid = false;
-            if (!valid) return;
-            deadlines.push({ date: dateInput.value, task: taskInput.value.trim(), client: clientInput.value.trim() });
-            deadlines.sort((a,b)=> new Date(a.date) - new Date(b.date));
-            renderDeadlineList();
-            saveData(STORAGE_KEYS.DEADLINES, deadlines);
-            dateInput.value=''; taskInput.value=''; clientInput.value='';
-        });
-
-        // Remove deadline (delegated)
-        deadlineList.addEventListener('click', (e) => {
-            if (e.target.classList.contains('remove-deadline')) {
-                const idx = parseInt(e.target.dataset.index,10);
-                if (!isNaN(idx)) {
-                    deadlines.splice(idx,1);
-                    saveData(STORAGE_KEYS.DEADLINES, deadlines);
-                    renderDeadlineList();
-                }
-            }
-        });
-
-        // Client modal
-        addClientBtn.addEventListener('click', () => { addClientModal.style.display='flex'; newClientCompanyInput.focus(); });
-        closeAddClientBtn.addEventListener('click', ()=> addClientModal.style.display='none');
-        cancelNewClientBtn.addEventListener('click', ()=> addClientModal.style.display='none');
-        addClientModal.addEventListener('keydown', (e)=> { if (e.key === 'Escape') addClientModal.style.display='none'; });
-
-        newClientForm.addEventListener('submit', (e)=> {
-            e.preventDefault();
-            const company = newClientCompanyInput.value.trim();
-            const services = newClientServicesInput.value.trim();
-            let valid = true;
-            showError('new-client-company-error', !company);
-            showError('new-client-services-error', !services);
-            if (!company || !services) valid = false;
-            if (!valid) return;
-            clientData.push({ company, services, complete: false });
-            filterAndRenderClients();
-            addClientModal.style.display='none';
-            saveData(STORAGE_KEYS.CLIENTS, clientData);
-            newClientForm.reset();
-        });
-
-        // Client checkbox toggle (delegated)
-        clientTableBody.addEventListener('change', (e) => {
-            if (e.target.classList.contains('client-complete-checkbox')) {
-                const idx = parseInt(e.target.dataset.index,10);
-                if (!isNaN(idx)) {
-                    clientData[idx].complete = e.target.checked;
-                    filterAndRenderClients();
-                    saveData(STORAGE_KEYS.CLIENTS, clientData);
-                }
-            }
-        });
-
-        // Remove client (delegated)
-        clientTableBody.addEventListener('click', (e) => {
-            if (e.target.classList.contains('remove-client-btn')) {
-                const idx = parseInt(e.target.dataset.index,10);
-                if (!isNaN(idx)) {
-                    lastRemovedClient = clientData.splice(idx,1)[0];
-                    filterAndRenderClients();
-                    undoClientBtn.classList.remove('hidden');
-                    saveData(STORAGE_KEYS.CLIENTS, clientData);
-                }
-            }
-        });
-
-        // Undo client removal
-        undoClientBtn.addEventListener('click', () => {
-            if (lastRemovedClient) {
-                clientData.push(lastRemovedClient);
-                lastRemovedClient = null;
-                undoClientBtn.classList.add('hidden');
-                filterAndRenderClients();
-                saveData(STORAGE_KEYS.CLIENTS, clientData);
-            }
-        });
-
-        // Filter clients
-        filterClientsSelect.addEventListener('change', (e)=> {
-            currentFilter = e.target.value;
-            filterAndRenderClients();
-        });
-
-        // Sorting client table headers
-        sortableHeaders.forEach(header => {
-            header.addEventListener('click', (e) => {
-                const sortKey = e.target.dataset.sortKey;
-                const direction = sortDirection[sortKey] === 'asc' ? 'desc' : 'asc';
-                sortDirection[sortKey] = direction;
-                e.target.textContent = e.target.textContent.replace(/ [▲▼]$/, '') + (direction === 'asc' ? ' ▲' : ' ▼');
-                clientData.sort((a,b) => {
-                    const aV = String(a[sortKey] || '').toLowerCase();
-                    const bV = String(b[sortKey] || '').toLowerCase();
-                    return direction === 'asc' ? aV.localeCompare(bV) : bV.localeCompare(aV);
+                    li.className = `flex items-center justify-between bg-gray-50 p-3 rounded-lg ${isOverdue ? 'border-l-4 border-red-500' : ''}`;
+                    li.innerHTML = `
+                        <div>
+                            <p class="font-bold text-gray-800 ${isOverdue ? 'overdue' : ''}">${escapeHtml(d.task)}</p>
+                            <p class="text-sm text-gray-500">${escapeHtml(d.client)} - <span class="${isOverdue ? 'overdue' : ''}">Due: ${deadlineDate.toLocaleDateString()}</span></p>
+                        </div>
+                        <button data-index="${i}" class="remove-deadline-btn text-red-500 hover:text-red-700 font-bold">✕</button>
+                    `;
+                    deadlineList.appendChild(li);
                 });
-                filterAndRenderClients();
+        };
+
+        const renderClients = () => {
+            const filteredData = clientData.filter(c => {
+                if (currentFilter === 'all') return true;
+                return currentFilter === 'complete' ? c.complete : !c.complete;
             });
-        });
 
-        // Task editor internals
-        addNewTaskBtn.addEventListener('click', () => {
-            const text = newTaskText.value.trim();
-            const pr = newTaskPriority.value;
-            if (!text) return;
-            const div = document.createElement('div');
-            div.className = 'task-edit-item';
-            div.innerHTML = `
-                <input type="text" class="rounded-md border-gray-300 p-2" value="${escapeHtml(text)}">
-                <select class="task-priority rounded-md p-2">
-                    <option value="low" ${pr==='low'?'selected':''}>Low</option>
-                    <option value="medium" ${pr==='medium'?'selected':''}>Medium</option>
-                    <option value="high" ${pr==='high'?'selected':''}>High</option>
-                </select>
-                <label class="flex items-center gap-2"><input type="checkbox" class="task-completed"> Done</label>
-                <button class="ml-2 remove-task-btn text-red-500">Delete</button>
-            `;
-            taskEditList.appendChild(div);
-            newTaskText.value = '';
-            newTaskText.focus();
-        });
-
-        // Remove task from editor (delegated)
-        taskEditList.addEventListener('click', (e) => {
-            if (e.target.classList.contains('remove-task-btn')) {
-                const item = e.target.closest('.task-edit-item');
-                if (item) item.remove();
-            }
-        });
-
-        // Close task editor
-        taskEditClose.addEventListener('click', closeTaskEditor);
-        taskEditCancel.addEventListener('click', closeTaskEditor);
-        window.addEventListener('click', (e)=> { if (e.target === taskEditModal) closeTaskEditor(); });
-
-        // Save task editor changes
-        taskEditSave.addEventListener('click', () => {
-            const { monthKey, week, type } = taskEditorContext;
-            if (!monthKey || !week || !type) { closeTaskEditor(); return; }
-            const weekData = plannerData[monthKey].weeks[week] || getDefaultTasks(week);
-            const newTasks = Array.from(taskEditList.children).map(div=>{
-                const text = div.querySelector('input[type="text"]').value.trim();
-                const priority = div.querySelector('.task-priority').value;
-                const completed = !!div.querySelector('.task-completed').checked;
-                return { text, priority, completed };
+            clientTableBody.innerHTML = '';
+            filteredData.forEach((client, index) => {
+                const tr = document.createElement('tr');
+                tr.className = client.complete ? 'bg-gray-100' : 'bg-white';
+                tr.innerHTML = `
+                    <td class="px-4 py-3 whitespace-nowrap"><div class="font-medium text-gray-800">${escapeHtml(client.company)}</div></td>
+                    <td class="px-4 py-3 whitespace-nowrap"><div class="text-gray-600">${escapeHtml(client.services)}</div></td>
+                    <td class="px-4 py-3 whitespace-nowrap text-center">
+                        <input type="checkbox" data-index="${index}" class="client-complete-checkbox h-5 w-5 rounded" ${client.complete ? 'checked' : ''}>
+                    </td>
+                    <td class="px-4 py-3 whitespace-nowrap text-center">
+                        <button data-index="${index}" class="remove-client-btn text-red-500 hover:text-red-700">Remove</button>
+                    </td>
+                `;
+                clientTableBody.appendChild(tr);
             });
-            weekData.tasks[type] = newTasks;
-            plannerData[monthKey].weeks[week] = weekData;
-            saveData(STORAGE_KEYS.PLANNER, plannerData);
-            if (getMonthKey(currentMonth) === monthKey && activeWeek === week) renderWeekContent(week);
-            const monthProgress = calculateMonthlyProgress(plannerData[monthKey]);
-            monthlyProgressFill.style.width = `${monthProgress}%`;
-            monthlyProgressText.textContent = `${monthProgress}% Complete`;
-            closeTaskEditor();
-        });
-
-        // Notifications for overdue deadlines (request once)
-        if (window.Notification && Notification.permission === 'default') Notification.requestPermission();
-        if (window.Notification && Notification.permission === 'granted') {
-            const today = new Date().setHours(0,0,0,0);
-            deadlines.forEach(dl=>{
-                if (new Date(dl.date).setHours(0,0,0,0) < today && !dl.notified) {
-                    new Notification('Overdue Deadline',{body:`${dl.task} for ${dl.client}`});
-                    dl.notified = true;
-                    saveData(STORAGE_KEYS.DEADLINES, deadlines);
-                }
-            });
-        }
-
-        /* =======================
-           Music modal: render, add, edit, delete, open link
-           ======================= */
-        const renderGenres = () => {
+        };
+        
+        const renderMusicGenres = () => {
             genresListEl.innerHTML = '';
-            musicGenres.forEach((g, idx) => {
+            musicGenres.forEach((g,i) => {
                 const row = document.createElement('div');
-                row.className = 'genre-row bg-gray-50 p-2 rounded-lg';
-                row.dataset.index = idx;
+                row.className = 'genre-row hover:bg-gray-100';
                 row.innerHTML = `
-                    <div class="flex-1">
-                        <a href="#" class="genre-link font-medium">${escapeHtml(g.name)}</a>
-                        <div class="small-muted">${escapeHtml(g.url)}</div>
+                    <div class="flex-grow">
+                        <a href="${escapeHtml(g.url)}" target="_blank" class="font-semibold text-gray-800">${escapeHtml(g.name)}</a>
+                        <p class="small-muted">${escapeHtml(g.url)}</p>
                     </div>
-                    <div class="genre-actions flex items-center">
-                        <button class="open-genre-btn bg-green-500 text-white py-1 px-2 rounded-md">Open</button>
-                        <button class="edit-genre-btn bg-yellow-300 text-black py-1 px-2 rounded-md">Edit</button>
-                        <button class="delete-genre-btn bg-red-400 text-white py-1 px-2 rounded-md">Delete</button>
+                    <div class="genre-actions">
+                        <button class="edit-genre-btn" data-index="${i}">✏️</button>
+                        <button class="delete-genre-btn" data-index="${i}">🗑️</button>
                     </div>
                 `;
                 genresListEl.appendChild(row);
             });
         };
 
-        // Open music modal
-        const openMusicModal = () => {
-            renderGenres();
-            musicModal.style.display = 'flex';
-        };
-        // Close music modal
-        const closeMusicModal = () => {
-            musicModal.style.display = 'none';
-        };
+        const addEventListeners = () => {
+            prevMonthBtn.addEventListener('click', () => {
+                currentMonth.setMonth(currentMonth.getMonth() - 1);
+                renderMonthNavigation();
+                renderWeekNavigation();
+                renderWeekContent(activeWeek);
+                updateMonthlyProgress();
+                saveData(STORAGE_KEYS.ACTIVE_MONTH, currentMonth.toISOString());
+            });
 
-        // Music button handlers
-        musicBtn.addEventListener('click', openMusicModal);
-        musicClose.addEventListener('click', closeMusicModal);
-        closeMusicBtn.addEventListener('click', closeMusicModal);
-        window.addEventListener('click', (e)=> { if (e.target === musicModal) closeMusicModal(); });
+            nextMonthBtn.addEventListener('click', () => {
+                currentMonth.setMonth(currentMonth.getMonth() + 1);
+                renderMonthNavigation();
+                renderWeekNavigation();
+                renderWeekContent(activeWeek);
+                updateMonthlyProgress();
+                saveData(STORAGE_KEYS.ACTIVE_MONTH, currentMonth.toISOString());
+            });
 
-        // Add new genre
-        addGenreBtn.addEventListener('click', () => {
-            const name = (newGenreName.value || '').trim();
-            const url = (newGenreLink.value || '').trim();
-            if (!name) { newGenreName.focus(); return; }
-            const linkToSave = url || `https://www.youtube.com/results?search_query=${encodeURIComponent(name)}`;
-            musicGenres.push({ name, url: linkToSave });
-            saveData(STORAGE_KEYS.MUSIC, musicGenres);
-            newGenreName.value = '';
-            newGenreLink.value = '';
-            renderGenres();
-        });
+            navigation.addEventListener('click', (e) => {
+                if (e.target.matches('.nav-btn')) {
+                    activeWeek = parseInt(e.target.dataset.week);
+                    renderWeekNavigation();
+                    renderWeekContent(activeWeek);
+                    saveData(STORAGE_KEYS.ACTIVE_WEEK, activeWeek);
+                }
+            });
 
-        // Delegated genre actions (open, edit, delete)
-        genresListEl.addEventListener('click', (e) => {
-            const row = e.target.closest('.genre-row');
-            if (!row) return;
-            const idx = parseInt(row.dataset.index,10);
-            if (e.target.classList.contains('open-genre-btn')) {
-                const url = musicGenres[idx].url;
-                window.open(url, '_blank', 'noopener');
-            } else if (e.target.classList.contains('delete-genre-btn')) {
-                if (!confirm(`Delete genre "${musicGenres[idx].name}"?`)) return;
-                musicGenres.splice(idx,1);
+            contentContainer.addEventListener('change', (e) => {
+                if (e.target.matches('.task-checkbox')) {
+                    const li = e.target.closest('li');
+                    const { type, index } = li.dataset;
+                    const monthKey = getMonthKey(currentMonth);
+                    plannerData[monthKey].weeks[activeWeek].tasks[type][index].completed = e.target.checked;
+                    saveData(STORAGE_KEYS.PLANNER, plannerData);
+                    renderWeekContent(activeWeek);
+                    updateMonthlyProgress();
+                }
+            });
+            
+            contentContainer.addEventListener('click', e => {
+                if (e.target.matches('.edit-tasks-btn')) {
+                    const { week, type } = e.target.dataset;
+                    openTaskEditor(getMonthKey(currentMonth), parseInt(week), type);
+                }
+            });
+
+            deadlineForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                deadlines.push({ date: e.target['deadline-date'].value, task: e.target['deadline-task'].value, client: e.target['deadline-client'].value });
+                saveData(STORAGE_KEYS.DEADLINES, deadlines);
+                renderDeadlines();
+                e.target.reset();
+            });
+
+            deadlineList.addEventListener('click', (e) => {
+                if (e.target.matches('.remove-deadline-btn')) {
+                    deadlines.splice(e.target.dataset.index, 1);
+                    saveData(STORAGE_KEYS.DEADLINES, deadlines);
+                    renderDeadlines();
+                }
+            });
+            
+            clientTableBody.addEventListener('click', (e) => {
+                const index = e.target.dataset.index;
+                if (e.target.matches('.remove-client-btn')) {
+                    lastRemovedClient = { client: clientData[index], index: index };
+                    clientData.splice(index, 1);
+                    undoClientBtn.classList.remove('hidden');
+                    setTimeout(() => undoClientBtn.classList.add('hidden'), 5000);
+                } else if (e.target.matches('.client-complete-checkbox')) {
+                    clientData[index].complete = e.target.checked;
+                }
+                saveData(STORAGE_KEYS.CLIENTS, clientData);
+                renderClients();
+            });
+
+            undoClientBtn.addEventListener('click', () => {
+                if (lastRemovedClient) {
+                    clientData.splice(lastRemovedClient.index, 0, lastRemovedClient.client);
+                    lastRemovedClient = null;
+                    undoClientBtn.classList.add('hidden');
+                    saveData(STORAGE_KEYS.CLIENTS, clientData);
+                    renderClients();
+                }
+            });
+            
+            filterClientsSelect.addEventListener('change', e => {
+                currentFilter = e.target.value;
+                renderClients();
+            });
+            
+            sortableHeaders.forEach(header => {
+                header.addEventListener('click', () => {
+                    const key = header.dataset.sortKey;
+                    sortDirection[key] = sortDirection[key] === 'asc' ? 'desc' : 'asc';
+                    clientData.sort((a,b) => {
+                        const valA = a[key].toLowerCase();
+                        const valB = b[key].toLowerCase();
+                        if (valA < valB) return sortDirection[key] === 'asc' ? -1 : 1;
+                        if (valA > valB) return sortDirection[key] === 'asc' ? 1 : -1;
+                        return 0;
+                    });
+                    renderClients();
+                });
+            });
+            
+            // Modal event listeners
+            addClientBtn.addEventListener('click', () => addClientModal.style.display = 'flex');
+            closeAddClientBtn.addEventListener('click', () => addClientModal.style.display = 'none');
+            cancelNewClientBtn.addEventListener('click', () => addClientModal.style.display = 'none');
+            
+            newClientForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                clientData.push({ company: newClientCompanyInput.value, services: newClientServicesInput.value, complete: false });
+                saveData(STORAGE_KEYS.CLIENTS, clientData);
+                renderClients();
+                addClientModal.style.display = 'none';
+                e.target.reset();
+            });
+
+            // Task Editor Modal events
+            taskEditClose.addEventListener('click', closeTaskEditor);
+            taskEditCancel.addEventListener('click', closeTaskEditor);
+            taskEditSave.addEventListener('click', () => {
+                const { monthKey, week, type } = taskEditorContext;
+                const newTasks = [];
+                taskEditList.querySelectorAll('.task-edit-item').forEach(item => {
+                    newTasks.push({
+                        text: item.querySelector('input[type="text"]').value,
+                        priority: item.querySelector('.task-priority').value,
+                        completed: item.querySelector('.task-completed').checked
+                    });
+                });
+                plannerData[monthKey].weeks[week].tasks[type] = newTasks;
+                saveData(STORAGE_KEYS.PLANNER, plannerData);
+                renderWeekContent(week);
+                updateMonthlyProgress();
+                closeTaskEditor();
+            });
+
+            addNewTaskBtn.addEventListener('click', () => {
+                const text = newTaskText.value.trim();
+                if (!text) return;
+                const { monthKey, week, type } = taskEditorContext;
+                const tasks = plannerData[monthKey].weeks[week].tasks[type];
+                tasks.push({
+                    text: text,
+                    priority: newTaskPriority.value,
+                    completed: false
+                });
+                openTaskEditor(monthKey, week, type); // Re-opens to refresh list
+            });
+            
+            taskEditList.addEventListener('click', e => {
+                if (e.target.matches('.remove-task-btn')) {
+                    e.target.closest('.task-edit-item').remove();
+                }
+            });
+
+            // Music Modal Events
+            musicBtn.addEventListener('click', () => musicModal.style.display = 'flex');
+            musicClose.addEventListener('click', () => musicModal.style.display = 'none');
+            closeMusicBtn.addEventListener('click', () => musicModal.style.display = 'none');
+            
+            addGenreBtn.addEventListener('click', () => {
+                const name = newGenreName.value.trim();
+                const url = newGenreLink.value.trim();
+                if (!name || !url) return;
+                musicGenres.push({name, url});
                 saveData(STORAGE_KEYS.MUSIC, musicGenres);
-                renderGenres();
-            } else if (e.target.classList.contains('edit-genre-btn')) {
-                // open in-place edit UI
-                const g = musicGenres[idx];
-                const editDiv = document.createElement('div');
-                editDiv.className = 'grid grid-cols-1 md:grid-cols-3 gap-2 w-full';
-                editDiv.innerHTML = `
-                    <input type="text" class="rounded-md p-2 md:col-span-2 edit-genre-name" value="${escapeHtml(g.name)}">
-                    <input type="text" class="rounded-md p-2 edit-genre-url" value="${escapeHtml(g.url)}">
-                    <div class="md:col-span-3 flex gap-2 justify-end mt-2">
-                        <button class="save-genre-btn bg-[#10b981] text-white py-1 px-3 rounded-md">Save</button>
-                        <button class="cancel-genre-edit-btn bg-gray-200 text-black py-1 px-3 rounded-md">Cancel</button>
-                    </div>
-                `;
-                // replace the row content temporarily
-                row.innerHTML = '';
-                row.appendChild(editDiv);
-
-                // save/cancel handlers (delegated on the editDiv)
-                editDiv.addEventListener('click', function handler(ev){
-                    if (ev.target.classList.contains('save-genre-btn')) {
-                        const newName = editDiv.querySelector('.edit-genre-name').value.trim();
-                        const newUrl = editDiv.querySelector('.edit-genre-url').value.trim();
-                        if (!newName) { alert('Name cannot be empty'); return; }
-                        musicGenres[idx] = { name: newName, url: newUrl || `https://www.youtube.com/results?search_query=${encodeURIComponent(newName)}` };
-                        saveData(STORAGE_KEYS.MUSIC, musicGenres);
-                        renderGenres();
-                    } else if (ev.target.classList.contains('cancel-genre-edit-btn')) {
-                        renderGenres();
-                    }
-                }, { once: true });
-            }
-        });
-
-        /* =======================
-           final initial renders
-           ======================= */
-        renderMonthNavigation();
-        renderWeekNavigation();
-        renderWeekContent(activeWeek);
-        renderDeadlineList();
-        filterAndRenderClients();
-
-        // Expose removeDeadline for inline use (if needed)
-        window.removeDeadline = function(idx){
-            if (typeof idx !== 'number') return;
-            deadlines.splice(idx,1);
-            saveData(STORAGE_KEYS.DEADLINES, deadlines);
-            renderDeadlineList();
+                renderMusicGenres();
+                newGenreName.value = '';
+                newGenreLink.value = '';
+            });
+            
+            genresListEl.addEventListener('click', e => {
+                 if (e.target.matches('.delete-genre-btn')) {
+                    const idx = parseInt(e.target.dataset.index);
+                    musicGenres.splice(idx, 1);
+                    saveData(STORAGE_KEYS.MUSIC, musicGenres);
+                    renderMusicGenres();
+                } else if (e.target.matches('.edit-genre-btn')) {
+                    const idx = parseInt(e.target.dataset.index);
+                    const genre = musicGenres[idx];
+                    newGenreName.value = genre.name;
+                    newGenreLink.value = genre.url;
+                    musicGenres.splice(idx, 1); // remove to re-add on save
+                }
+            });
         };
 
-        // End DOMContentLoaded
+        const init = () => {
+            setupWelcomeModal(); // Show welcome modal on start
+            renderMonthNavigation();
+            renderWeekNavigation();
+            renderWeekContent(activeWeek);
+            updateMonthlyProgress();
+            renderDeadlines();
+            renderClients();
+            renderMusicGenres();
+            addEventListeners();
+        };
+
+        init();
     });
     </script>
 </body>
