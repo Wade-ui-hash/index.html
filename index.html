@@ -2,111 +2,47 @@
 <html lang="en">
 <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
     <title>Interactive Monthly Planner</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        :root {
-            --bg-color: #F5F5F5;
-            --text-color: #333333;
-            --card-bg: #FFFFFF;
-            --accent-color: #E42642;
-            --completed-color: #B5B5B5;
-            --overdue-color: #E42642;
-            --progress-bg: #e5e7eb;
-            --progress-fill: #10b981;
+        :root{
+            --bg-color:#F5F5F5;
+            --text-color:#333333;
+            --card-bg:#FFFFFF;
+            --accent-color:#E42642;
+            --completed-color:#B5B5B5;
+            --overdue-color:#E42642;
+            --progress-bg:#e5e7eb;
+            --progress-fill:#10b981;
         }
-        /* .dark removed intentionally (dark mode removed) */
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-color);
-        }
-        .nav-btn {
-            transition: all 0.3s ease;
-        }
-        .nav-btn.active {
-            background-color: var(--accent-color);
-            color: white;
-            font-weight: 600;
-        }
-        .task-card ul {
-            list-style: none;
-        }
-        .task-card ul li {
-            display: flex;
-            align-items: center;
-            margin-bottom: 0.5rem;
-            cursor: grab;
-        }
-        .task-card ul li:active {
-            cursor: grabbing;
-        }
-        .completed {
-            text-decoration: line-through;
-            color: var(--completed-color);
-        }
-        .sortable-header {
-            cursor: pointer;
-            user-select: none;
-        }
-        .modal {
-            display: none;
-            position: fixed;
-            z-index: 1000;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            overflow: auto;
-            background-color: rgba(0,0,0,0.5);
-            align-items: center;
-            justify-content: center;
-        }
-        .modal-content {
-            background-color: var(--card-bg);
-            padding: 24px;
-            border-radius: 0.75rem;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            max-width: 500px;
-            width: 90%;
-        }
-        .close-btn {
-            color: #aaa;
-            float: right;
-            font-size: 28px;
-            font-weight: bold;
-        }
-        .close-btn:hover,
-        .close-btn:focus {
-            color: var(--text-color);
-            text-decoration: none;
-            cursor: pointer;
-        }
-        .overdue {
-            color: var(--overdue-color);
-            font-weight: bold;
-        }
-        .progress-bar {
-            background-color: var(--progress-bg);
-            height: 8px;
-            border-radius: 9999px;
-            overflow: hidden;
-        }
-        .progress-fill {
-            background-color: var(--progress-fill);
-            height: 100%;
-            transition: width 0.3s ease;
-        }
-        .error-message {
-            color: #E42642;
-            font-size: 0.875rem;
-            margin-top: 0.25rem;
-        }
-        [role="tab"]:focus {
-            outline: 2px solid var(--accent-color);
-        }
+        body{font-family:'Inter',sans-serif;background-color:var(--bg-color);color:var(--text-color)}
+        .nav-btn{transition:all .3s ease}
+        .nav-btn.active{background-color:var(--accent-color);color:#fff;font-weight:600}
+        .task-card ul{list-style:none;padding:0;margin:0}
+        .task-card ul li{display:flex;align-items:center;margin-bottom:.5rem;cursor:grab}
+        .task-card ul li:active{cursor:grabbing}
+        .completed{text-decoration:line-through;color:var(--completed-color)}
+        .sortable-header{cursor:pointer;user-select:none}
+        .modal{display:none;position:fixed;z-index:1000;left:0;top:0;width:100%;height:100%;overflow:auto;background-color:rgba(0,0,0,.5);align-items:center;justify-content:center}
+        .modal-content{background-color:var(--card-bg);padding:24px;border-radius:.75rem;box-shadow:0 4px 6px rgba(0,0,0,.1);max-width:680px;width:94%}
+        .close-btn{color:#aaa;float:right;font-size:28px;font-weight:bold}
+        .close-btn:hover,.close-btn:focus{color:var(--text-color);text-decoration:none;cursor:pointer}
+        .overdue{color:var(--overdue-color);font-weight:bold}
+        .progress-bar{background-color:var(--progress-bg);height:8px;border-radius:9999px;overflow:hidden}
+        .progress-fill{background-color:var(--progress-fill);height:100%;transition:width .3s ease}
+        .error-message{color:#E42642;font-size:.875rem;margin-top:.25rem}
+        [role="tab"]:focus{outline:2px solid var(--accent-color)}
+        /* small utility for edit button inside card header */
+        .card-header { display:flex; align-items:center; justify-content:space-between; gap:8px }
+        .edit-tasks-btn { background: transparent; border: 1px solid rgba(0,0,0,0.08); padding:6px 10px; border-radius:8px; font-size:0.875rem; cursor:pointer }
+        .edit-tasks-btn:hover { background: rgba(0,0,0,0.03) }
+        /* modal task editor */
+        .task-edit-list { max-height: 320px; overflow:auto; margin-bottom: 12px; }
+        .task-edit-item { display:flex; gap:8px; align-items:center; margin-bottom:8px; }
+        .task-edit-item input[type="text"] { flex:1; }
+        .task-priority { font-size:0.8rem; padding:6px 8px; border-radius:6px; border:1px solid #e5e7eb; background:#fff }
     </style>
 </head>
 <body class="antialiased text-gray-900">
@@ -119,22 +55,19 @@
 
         <main>
             <!-- Month navigation -->
-            <nav class="flex justify-center items-center bg-white rounded-xl shadow-sm p-2 mb-4" id="month-navigation">
+            <nav id="month-navigation" class="flex justify-center items-center bg-white rounded-xl shadow-sm p-2 mb-4">
                 <button id="prev-month" class="nav-btn px-4 py-2 text-gray-700">&lt; Prev</button>
                 <span id="current-month" class="px-4 py-2 font-semibold"></span>
                 <button id="next-month" class="nav-btn px-4 py-2 text-gray-700">Next &gt;</button>
             </nav>
 
-            <!-- Week navigation (tabs) -->
-            <nav class="flex justify-center items-center bg-white rounded-xl shadow-sm p-2 mb-8" id="week-navigation" role="tablist">
-            </nav>
+            <!-- Week navigation -->
+            <nav id="week-navigation" role="tablist" class="flex justify-center items-center bg-white rounded-xl shadow-sm p-2 mb-8"></nav>
 
             <!-- Monthly progress -->
             <div id="monthly-progress" class="mb-8 bg-white p-6 rounded-xl shadow-sm">
                 <h2 class="text-2xl font-bold text-gray-800 mb-4">Monthly Progress</h2>
-                <div class="progress-bar mb-2">
-                    <div id="monthly-progress-fill" class="progress-fill" style="width: 0%"></div>
-                </div>
+                <div class="progress-bar mb-2"><div id="monthly-progress-fill" class="progress-fill" style="width:0%"></div></div>
                 <p id="monthly-progress-text" class="text-sm text-gray-600 text-center">0% Complete</p>
             </div>
 
@@ -151,18 +84,18 @@
                     <form id="add-deadline-form" class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
                         <div class="md:col-span-1">
                             <label for="deadline-date" class="block text-sm font-medium text-gray-700">Date</label>
-                            <input type="date" id="deadline-date" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 p-2 bg-white text-gray-900">
-                            <p class="error-message hidden" id="deadline-date-error">Please select a date.</p>
+                            <input id="deadline-date" type="date" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 bg-white text-gray-900">
+                            <p id="deadline-date-error" class="error-message hidden">Please select a date.</p>
                         </div>
                         <div class="md:col-span-2">
                             <label for="deadline-task" class="block text-sm font-medium text-gray-700">Project/Task Name</label>
-                            <input type="text" id="deadline-task" placeholder="e.g., Finalize Q3 Report" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 p-2 bg-white text-gray-900">
-                            <p class="error-message hidden" id="deadline-task-error">Please enter a task name.</p>
+                            <input id="deadline-task" type="text" placeholder="e.g., Finalize Q3 Report" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 bg-white text-gray-900">
+                            <p id="deadline-task-error" class="error-message hidden">Please enter a task name.</p>
                         </div>
                         <div class="md:col-span-1">
                             <label for="deadline-client" class="block text-sm font-medium text-gray-700">Client</label>
-                            <input type="text" id="deadline-client" placeholder="e.g., Client Inc." required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 p-2 bg-white text-gray-900">
-                            <p class="error-message hidden" id="deadline-client-error">Please enter a client.</p>
+                            <input id="deadline-client" type="text" placeholder="e.g., Client Inc." required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 bg-white text-gray-900">
+                            <p id="deadline-client-error" class="error-message hidden">Please enter a client.</p>
                         </div>
                         <button type="submit" class="w-full md:w-auto md:col-start-4 bg-[#E42642] text-white font-semibold py-2 px-6 rounded-lg hover:bg-opacity-90 transition-colors">Add Deadline</button>
                     </form>
@@ -175,25 +108,25 @@
                 <div class="flex justify-between items-center mb-4">
                     <div class="flex items-center gap-2">
                         <label for="filter-clients" class="text-sm font-medium text-gray-700">Filter by:</label>
-                        <select id="filter-clients" class="bg-white text-gray-900 rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 p-2 text-sm">
+                        <select id="filter-clients" class="bg-white text-gray-900 rounded-md border-gray-300 shadow-sm p-2 text-sm">
                             <option value="all">All</option>
                             <option value="incomplete">Incomplete</option>
                             <option value="complete">Complete</option>
                         </select>
                     </div>
                     <div class="flex justify-end gap-2">
-                        <button id="undo-client-btn" class="bg-gray-200 text-gray-600 font-semibold py-2 px-6 rounded-lg hover:bg-gray-300 transition-colors hidden">Undo Remove</button>
-                        <button id="add-client-btn" class="bg-[#E42642] text-white font-semibold py-2 px-6 rounded-lg hover:bg-opacity-90 transition-colors">Add New Client</button>
+                        <button id="undo-client-btn" class="bg-gray-200 text-gray-600 font-semibold py-2 px-6 rounded-lg hidden">Undo Remove</button>
+                        <button id="add-client-btn" class="bg-[#E42642] text-white font-semibold py-2 px-6 rounded-lg">Add New Client</button>
                     </div>
                 </div>
                 <div class="overflow-x-auto">
                     <table class="min-w-full divide-y divide-gray-200">
                         <thead>
                             <tr>
-                                <th scope="col" class="px-4 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider sortable-header" data-sort-key="company">Company</th>
-                                <th scope="col" class="px-4 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider sortable-header" data-sort-key="services">Services</th>
-                                <th scope="col" class="px-4 py-3 text-center text-sm font-semibold text-gray-700 uppercase tracking-wider">Complete</th>
-                                <th scope="col" class="px-4 py-3 text-center text-sm font-semibold text-gray-700 uppercase tracking-wider">Actions</th>
+                                <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider sortable-header" data-sort-key="company">Company</th>
+                                <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider sortable-header" data-sort-key="services">Services</th>
+                                <th class="px-4 py-3 text-center text-sm font-semibold text-gray-700 uppercase tracking-wider">Complete</th>
+                                <th class="px-4 py-3 text-center text-sm font-semibold text-gray-700 uppercase tracking-wider">Actions</th>
                             </tr>
                         </thead>
                         <tbody id="client-table-body" class="bg-white divide-y divide-gray-200"></tbody>
@@ -211,25 +144,50 @@
             <form id="new-client-form" class="space-y-4">
                 <div>
                     <label for="new-client-company" class="block text-sm font-medium text-gray-700">Company</label>
-                    <input type="text" id="new-client-company" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 bg-white text-gray-900">
-                    <p class="error-message hidden" id="new-client-company-error">Please enter a company name.</p>
+                    <input id="new-client-company" type="text" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 bg-white text-gray-900">
+                    <p id="new-client-company-error" class="error-message hidden">Please enter a company name.</p>
                 </div>
                 <div>
                     <label for="new-client-services" class="block text-sm font-medium text-gray-700">Services</label>
-                    <input type="text" id="new-client-services" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 bg-white text-gray-900">
-                    <p class="error-message hidden" id="new-client-services-error">Please enter services.</p>
+                    <input id="new-client-services" type="text" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 bg-white text-gray-900">
+                    <p id="new-client-services-error" class="error-message hidden">Please enter services.</p>
                 </div>
                 <div class="flex justify-end gap-2 mt-4">
-                    <button type="button" id="cancel-new-client-btn" class="bg-gray-200 text-gray-800 font-semibold py-2 px-6 rounded-lg hover:bg-gray-300 transition-colors">Cancel</button>
-                    <button type="submit" id="confirm-new-client-btn" class="bg-[#E42642] text-white font-semibold py-2 px-6 rounded-lg hover:bg-opacity-90 transition-colors">Confirm</button>
+                    <button id="cancel-new-client-btn" type="button" class="bg-gray-200 text-gray-800 font-semibold py-2 px-6 rounded-lg">Cancel</button>
+                    <button id="confirm-new-client-btn" type="submit" class="bg-[#E42642] text-white font-semibold py-2 px-6 rounded-lg">Confirm</button>
                 </div>
             </form>
         </div>
     </div>
 
+    <!-- Task Editor Modal (reused for daily/weekly/monthly) -->
+    <div id="task-edit-modal" class="modal">
+        <div class="modal-content">
+            <span id="task-edit-close" class="close-btn">&times;</span>
+            <h3 id="task-edit-title" class="text-xl font-semibold mb-3">Edit Tasks</h3>
+
+            <div class="task-edit-list mb-3" id="task-edit-list"></div>
+
+            <div class="flex gap-2 items-center mb-3">
+                <input id="new-task-text" type="text" placeholder="New task description" class="w-full rounded-md border-gray-300 p-2">
+                <select id="new-task-priority" class="rounded-md border-gray-300 p-2">
+                    <option value="low">Low</option>
+                    <option value="medium" selected>Medium</option>
+                    <option value="high">High</option>
+                </select>
+                <button id="add-new-task-btn" class="bg-[#E42642] text-white py-2 px-4 rounded-md">Add</button>
+            </div>
+
+            <div class="flex justify-end gap-2">
+                <button id="task-edit-cancel" class="bg-gray-200 text-gray-800 py-2 px-4 rounded-md">Cancel</button>
+                <button id="task-edit-save" class="bg-[#10b981] text-white py-2 px-4 rounded-md">Save Changes</button>
+            </div>
+        </div>
+    </div>
+
     <script>
     document.addEventListener('DOMContentLoaded', () => {
-        // --- localStorage Keys (THEME removed) ---
+        // STORAGE KEYS
         const STORAGE_KEYS = {
             DEADLINES: 'monthlyPlannerDeadlines',
             CLIENTS: 'monthlyPlannerClients',
@@ -238,15 +196,15 @@
             PLANNER: 'monthlyPlannerData'
         };
 
-        // --- State ---
+        // State
         let lastRemovedClient = null;
         let sortDirection = {};
         let currentFilter = 'all';
-        let currentDate = new Date('2025-09-09'); // provided current date
+        let currentDate = new Date('2025-09-09'); // kept as in original; change to new Date() if desired
         let currentMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
         let activeWeek = 1;
 
-        // --- Default weekly task templates ---
+        // Default tasks (same as original)
         const getDefaultTasks = (week) => {
             const defaults = [
                 null,
@@ -322,19 +280,18 @@
             return defaults[week] || { title: `Week ${week}`, tasks: { daily: [], weekly: [], monthly: [] } };
         };
 
-        // --- Storage helpers ---
+        // Storage helpers
         const loadData = (key) => {
-            const data = localStorage.getItem(key);
-            return data ? JSON.parse(data) : null;
+            const d = localStorage.getItem(key);
+            return d ? JSON.parse(d) : null;
         };
-        const saveData = (key, data) => localStorage.setItem(key, JSON.stringify(data));
+        const saveData = (key, val) => localStorage.setItem(key, JSON.stringify(val));
 
-        // --- Initialize state from storage or defaults ---
+        // Initialize planner data
         let plannerData = loadData(STORAGE_KEYS.PLANNER) || {};
-        const monthKey = currentMonth.toISOString().slice(0,7);
-        if (!plannerData[monthKey]) {
-            plannerData[monthKey] = { weeks: [null, getDefaultTasks(1), getDefaultTasks(2), getDefaultTasks(3), getDefaultTasks(4)] };
-        }
+        const monthKeyInit = currentMonth.toISOString().slice(0,7);
+        if (!plannerData[monthKeyInit]) plannerData[monthKeyInit] = { weeks: [null, getDefaultTasks(1), getDefaultTasks(2), getDefaultTasks(3), getDefaultTasks(4)] };
+
         let deadlines = loadData(STORAGE_KEYS.DEADLINES) || [];
         let clientData = loadData(STORAGE_KEYS.CLIENTS) || [
             { company: 'Prominent Roofing', services: 'Google Ads, 1 SEO blog, 4 posts', complete: false },
@@ -348,8 +305,7 @@
         if (savedMonth) currentMonth = new Date(savedMonth);
         activeWeek = parseInt(loadData(STORAGE_KEYS.ACTIVE_WEEK)) || 1;
 
-        // --- DOM refs ---
-        const monthNav = document.getElementById('month-navigation');
+        // DOM refs
         const prevMonthBtn = document.getElementById('prev-month');
         const nextMonthBtn = document.getElementById('next-month');
         const currentMonthSpan = document.getElementById('current-month');
@@ -361,20 +317,30 @@
         const deadlineList = document.getElementById('deadline-list');
         const clientTableBody = document.getElementById('client-table-body');
         const addClientBtn = document.getElementById('add-client-btn');
-        const undoBtn = document.getElementById('undo-client-btn');
-        const sortableHeaders = document.querySelectorAll('.sortable-header');
+        const undoClientBtn = document.getElementById('undo-client-btn');
         const filterClientsSelect = document.getElementById('filter-clients');
+        const sortableHeaders = document.querySelectorAll('.sortable-header');
 
-        // Modal elements
         const addClientModal = document.getElementById('add-client-modal');
         const newClientForm = document.getElementById('new-client-form');
         const newClientCompanyInput = document.getElementById('new-client-company');
         const newClientServicesInput = document.getElementById('new-client-services');
-        const closeModalBtn = document.getElementById('close-modal-btn');
+        const closeAddClientBtn = document.getElementById('close-modal-btn');
         const cancelNewClientBtn = document.getElementById('cancel-new-client-btn');
 
-        // --- Helpers ---
-        const getMonthKey = (date) => date.toISOString().slice(0,7);
+        // Task editor modal elements
+        const taskEditModal = document.getElementById('task-edit-modal');
+        const taskEditClose = document.getElementById('task-edit-close');
+        const taskEditTitle = document.getElementById('task-edit-title');
+        const taskEditList = document.getElementById('task-edit-list');
+        const newTaskText = document.getElementById('new-task-text');
+        const newTaskPriority = document.getElementById('new-task-priority');
+        const addNewTaskBtn = document.getElementById('add-new-task-btn');
+        const taskEditCancel = document.getElementById('task-edit-cancel');
+        const taskEditSave = document.getElementById('task-edit-save');
+
+        // helpers
+        const getMonthKey = date => date.toISOString().slice(0,7);
         const getWeeksInMonth = (date) => {
             const year = date.getFullYear();
             const month = date.getMonth();
@@ -382,46 +348,146 @@
             const daysInMonth = new Date(year, month+1, 0).getDate();
             return Math.ceil((daysInMonth + firstDay) / 7);
         };
-        const calculateProgress = (tasks) => {
-            const allTasks = [...tasks.daily, ...tasks.weekly, ...tasks.monthly];
-            if (allTasks.length === 0) return 0;
-            const completed = allTasks.filter(t => t.completed).length;
-            return Math.round((completed / allTasks.length) * 100);
+        const calculateProgress = tasks => {
+            const all = [...tasks.daily, ...tasks.weekly, ...tasks.monthly];
+            if (all.length === 0) return 0;
+            const completed = all.filter(t=>t.completed).length;
+            return Math.round((completed / all.length) * 100);
         };
-        const calculateMonthlyProgress = (monthData) => {
-            let totalCompleted = 0;
-            let totalTasks = 0;
-            monthData.weeks.forEach(weekData => {
-                if (weekData) {
-                    const tasks = weekData.tasks;
-                    const allTasks = [...tasks.daily, ...tasks.weekly, ...tasks.monthly];
-                    totalTasks += allTasks.length;
-                    totalCompleted += allTasks.filter(t => t.completed).length;
-                }
+        const calculateMonthlyProgress = monthData => {
+            let total = 0, done = 0;
+            monthData.weeks.forEach(w=>{
+                if (!w) return;
+                const all = [...w.tasks.daily, ...w.tasks.weekly, ...w.tasks.monthly];
+                total += all.length;
+                done += all.filter(t=>t.completed).length;
             });
-            return totalTasks > 0 ? Math.round((totalCompleted / totalTasks) * 100) : 0;
+            return total>0?Math.round((done/total)*100):0;
         };
 
-        // --- Render functions ---
+        // Render month & week navigation
         const renderMonthNavigation = () => {
-            currentMonthSpan.textContent = currentMonth.toLocaleString('default', { month: 'long', year: 'numeric' });
+            currentMonthSpan.textContent = currentMonth.toLocaleString('default',{month:'long',year:'numeric'});
         };
-
         const renderWeekNavigation = () => {
             navigation.innerHTML = '';
             const weeks = getWeeksInMonth(currentMonth);
-            for (let i = 1; i <= weeks; i++) {
+            for (let i=1;i<=weeks;i++){
                 const btn = document.createElement('button');
                 btn.dataset.week = i;
                 btn.className = 'nav-btn w-1/4 py-3 px-2 text-center rounded-lg text-gray-700';
                 btn.role = 'tab';
-                btn.ariaSelected = (i === activeWeek) ? 'true' : 'false';
+                btn.ariaSelected = (i===activeWeek)?'true':'false';
                 btn.textContent = `Week ${i}`;
-                if (i === activeWeek) btn.classList.add('active');
+                if (i===activeWeek) btn.classList.add('active');
                 navigation.appendChild(btn);
             }
         };
 
+        // Open task editor for a given week and type ('daily'|'weekly'|'monthly')
+        let taskEditorContext = { monthKey: null, week: null, type: null };
+        const openTaskEditor = (monthKey, week, type) => {
+            taskEditorContext = { monthKey, week, type };
+            const weekData = plannerData[monthKey].weeks[week] || getDefaultTasks(week);
+            const tasks = weekData.tasks[type];
+            taskEditTitle.textContent = `${weekData.title} — ${type[0].toUpperCase()+type.slice(1)} Tasks`;
+            // populate list
+            taskEditList.innerHTML = '';
+            tasks.forEach((t, idx) => {
+                const div = document.createElement('div');
+                div.className = 'task-edit-item';
+                div.dataset.index = idx;
+                div.innerHTML = `
+                    <input type="text" class="rounded-md border-gray-300 p-2" value="${escapeHtml(t.text)}">
+                    <select class="task-priority rounded-md p-2">
+                        <option value="low" ${t.priority==='low'?'selected':''}>Low</option>
+                        <option value="medium" ${t.priority==='medium'?'selected':''}>Medium</option>
+                        <option value="high" ${t.priority==='high'?'selected':''}>High</option>
+                    </select>
+                    <label class="flex items-center gap-2"><input type="checkbox" class="task-completed" ${t.completed?'checked':''}> Done</label>
+                    <button class="ml-2 remove-task-btn text-red-500">Delete</button>
+                `;
+                taskEditList.appendChild(div);
+            });
+            // show modal
+            taskEditModal.style.display = 'flex';
+            newTaskText.value = '';
+            newTaskPriority.value = 'medium';
+            newTaskText.focus();
+        };
+
+        const closeTaskEditor = () => {
+            taskEditModal.style.display = 'none';
+            taskEditorContext = { monthKey:null, week:null, type:null };
+        };
+
+        // Utility to escape HTML in values (prevent breaking attributes)
+        function escapeHtml(unsafe) {
+            return unsafe.replace(/[&<>"']/g, function(m){ return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'})[m]; });
+        }
+
+        // Add new task inside editor (just pushing to DOM; final save will persist)
+        addNewTaskBtn.addEventListener('click', () => {
+            const text = newTaskText.value.trim();
+            const pr = newTaskPriority.value;
+            if (!text) return;
+            const div = document.createElement('div');
+            div.className = 'task-edit-item';
+            div.innerHTML = `
+                <input type="text" class="rounded-md border-gray-300 p-2" value="${escapeHtml(text)}">
+                <select class="task-priority rounded-md p-2">
+                    <option value="low" ${pr==='low'?'selected':''}>Low</option>
+                    <option value="medium" ${pr==='medium'?'selected':''}>Medium</option>
+                    <option value="high" ${pr==='high'?'selected':''}>High</option>
+                </select>
+                <label class="flex items-center gap-2"><input type="checkbox" class="task-completed"> Done</label>
+                <button class="ml-2 remove-task-btn text-red-500">Delete</button>
+            `;
+            taskEditList.appendChild(div);
+            newTaskText.value = '';
+            newTaskText.focus();
+        });
+
+        // Delete task from editor (delegated)
+        taskEditList.addEventListener('click', (e) => {
+            if (e.target.classList.contains('remove-task-btn')) {
+                const item = e.target.closest('.task-edit-item');
+                item.remove();
+            }
+        });
+
+        // Close editor handlers
+        taskEditClose.addEventListener('click', closeTaskEditor);
+        taskEditCancel.addEventListener('click', closeTaskEditor);
+        window.addEventListener('click', (e) => { if (e.target === taskEditModal) closeTaskEditor(); });
+
+        // Save changes from editor back to plannerData
+        taskEditSave.addEventListener('click', () => {
+            const { monthKey, week, type } = taskEditorContext;
+            if (!monthKey || !week || !type) { closeTaskEditor(); return; }
+            const weekData = plannerData[monthKey].weeks[week] || getDefaultTasks(week);
+            const newTasks = Array.from(taskEditList.children).map(div => {
+                const text = div.querySelector('input[type="text"]').value.trim();
+                const priority = div.querySelector('.task-priority').value;
+                const completed = !!div.querySelector('.task-completed').checked;
+                return { text, priority, completed };
+            });
+            // Persist
+            weekData.tasks[type] = newTasks;
+            plannerData[monthKey].weeks[week] = weekData;
+            saveData(STORAGE_KEYS.PLANNER, plannerData);
+            // Re-render the current active week (if same month & week)
+            if (getMonthKey(currentMonth) === monthKey && activeWeek === week) {
+                renderWeekContent(week);
+            }
+            // Update monthly progress display
+            const monthProgress = calculateMonthlyProgress(plannerData[monthKey]);
+            monthlyProgressFill.style.width = `${monthProgress}%`;
+            monthlyProgressText.textContent = `${monthProgress}% Complete`;
+            closeTaskEditor();
+        });
+
+        // Render a week (includes adding "Edit Tasks" button to each card)
         const renderWeekContent = (week) => {
             const monthKey = getMonthKey(currentMonth);
             const weekData = plannerData[monthKey].weeks[week] || getDefaultTasks(week);
@@ -432,13 +498,18 @@
             if (weekData.tasks.monthly.length > 0) {
                 monthlyTasksHtml = `
                     <div class="task-card bg-[var(--card-bg)] p-6 rounded-xl shadow-sm">
-                        <h3 class="text-xl font-semibold mb-3">Monthly Tasks</h3>
-                        <ul id="monthly-tasks-${week}" class="text-[var(--text-color)]" draggable="true">${weekData.tasks.monthly.map((task, i) => `
-                            <li data-type="monthly" data-index="${i}" role="listitem" class="priority-${task.priority}">
-                                <input type="checkbox" id="task-${week}-monthly-${i}" class="task-checkbox mr-2 w-4 h-4 text-[var(--accent-color)] border-gray-300 rounded-sm focus:ring-[var(--accent-color)]" ${task.completed ? 'checked' : ''}>
-                                <label for="task-${week}-monthly-${i}" class="flex-1 ${task.completed ? 'completed' : ''}">${task.text}</label>
-                            </li>
-                        `).join('')}</ul>
+                        <div class="card-header mb-3">
+                            <h3 class="text-xl font-semibold">Monthly Tasks</h3>
+                            <button class="edit-tasks-btn" data-week="${week}" data-type="monthly">Edit Tasks</button>
+                        </div>
+                        <ul id="monthly-tasks-${week}" class="text-[var(--text-color)]" draggable="true">
+                            ${weekData.tasks.monthly.map((task,i)=>`
+                                <li data-type="monthly" data-index="${i}">
+                                    <input type="checkbox" id="task-${week}-monthly-${i}" class="task-checkbox mr-2" ${task.completed?'checked':''}>
+                                    <label for="task-${week}-monthly-${i}" class="${task.completed?'completed':''}">${task.text}</label>
+                                </li>
+                            `).join('')}
+                        </ul>
                     </div>
                 `;
             }
@@ -447,80 +518,99 @@
                 <section id="week-${week}-content" class="bg-gray-100 p-6 rounded-xl">
                     <h2 class="text-2xl font-bold mb-4 text-center">${weekData.title}</h2>
                     <div class="mb-4">
-                        <div class="progress-bar">
-                            <div class="progress-fill" style="width: ${progress}%"></div>
-                        </div>
+                        <div class="progress-bar"><div class="progress-fill" style="width:${progress}%"></div></div>
                         <p class="text-sm text-gray-600 mt-1 text-center">${progress}% Complete</p>
                     </div>
                     <div class="grid grid-cols-1 md:grid-cols-2 ${monthlyTasksHtml ? 'lg:grid-cols-3' : ''} gap-6">
                         <div class="task-card bg-[var(--card-bg)] p-6 rounded-xl shadow-sm">
-                            <h3 class="text-xl font-semibold mb-3">Daily Tasks</h3>
-                            <ul id="daily-tasks-${week}" class="text-[var(--text-color)]" draggable="true">${weekData.tasks.daily.map((task, i) => `
-                                <li data-type="daily" data-index="${i}" role="listitem" class="priority-${task.priority}">
-                                    <input type="checkbox" id="task-${week}-daily-${i}" class="task-checkbox mr-2 w-4 h-4 text-[var(--accent-color)] border-gray-300 rounded-sm focus:ring-[var(--accent-color)]" ${task.completed ? 'checked' : ''}>
-                                    <label for="task-${week}-daily-${i}" class="flex-1 ${task.completed ? 'completed' : ''}">${task.text}</label>
-                                </li>
-                            `).join('')}</ul>
+                            <div class="card-header mb-3">
+                                <h3 class="text-xl font-semibold">Daily Tasks</h3>
+                                <button class="edit-tasks-btn" data-week="${week}" data-type="daily">Edit Tasks</button>
+                            </div>
+                            <ul id="daily-tasks-${week}" class="text-[var(--text-color)]" draggable="true">
+                                ${weekData.tasks.daily.map((task,i)=>`
+                                    <li data-type="daily" data-index="${i}">
+                                        <input type="checkbox" id="task-${week}-daily-${i}" class="task-checkbox mr-2" ${task.completed?'checked':''}>
+                                        <label for="task-${week}-daily-${i}" class="${task.completed?'completed':''}">${task.text}</label>
+                                    </li>
+                                `).join('')}
+                            </ul>
                         </div>
+
                         <div class="task-card bg-[var(--card-bg)] p-6 rounded-xl shadow-sm">
-                            <h3 class="text-xl font-semibold mb-3">Weekly Tasks</h3>
-                            <ul id="weekly-tasks-${week}" class="text-[var(--text-color)]" draggable="true">${weekData.tasks.weekly.map((task, i) => `
-                                <li data-type="weekly" data-index="${i}" role="listitem" class="priority-${task.priority}">
-                                    <input type="checkbox" id="task-${week}-weekly-${i}" class="task-checkbox mr-2 w-4 h-4 text-[var(--accent-color)] border-gray-300 rounded-sm focus:ring-[var(--accent-color)]" ${task.completed ? 'checked' : ''}>
-                                    <label for="task-${week}-weekly-${i}" class="flex-1 ${task.completed ? 'completed' : ''}">${task.text}</label>
-                                </li>
-                            `).join('')}</ul>
+                            <div class="card-header mb-3">
+                                <h3 class="text-xl font-semibold">Weekly Tasks</h3>
+                                <button class="edit-tasks-btn" data-week="${week}" data-type="weekly">Edit Tasks</button>
+                            </div>
+                            <ul id="weekly-tasks-${week}" class="text-[var(--text-color)]" draggable="true">
+                                ${weekData.tasks.weekly.map((task,i)=>`
+                                    <li data-type="weekly" data-index="${i}">
+                                        <input type="checkbox" id="task-${week}-weekly-${i}" class="task-checkbox mr-2" ${task.completed?'checked':''}>
+                                        <label for="task-${week}-weekly-${i}" class="${task.completed?'completed':''}">${task.text}</label>
+                                    </li>
+                                `).join('')}
+                            </ul>
                         </div>
+
                         ${monthlyTasksHtml}
                     </div>
                 </section>
             `;
 
-            // Update monthly progress display
+            // monthly progress update
             const monthProgress = calculateMonthlyProgress(plannerData[monthKey]);
             monthlyProgressFill.style.width = `${monthProgress}%`;
             monthlyProgressText.textContent = `${monthProgress}% Complete`;
 
-            // Drag & Drop logic per list
+            // attach edit button listeners (delegated via contentContainer)
+            Array.from(contentContainer.querySelectorAll('.edit-tasks-btn')).forEach(btn=>{
+                btn.addEventListener('click', (e)=>{
+                    const weekNum = parseInt(btn.dataset.week);
+                    const type = btn.dataset.type;
+                    openTaskEditor(getMonthKey(currentMonth), weekNum, type);
+                });
+            });
+
+            // Drag & drop within lists
             let draggedItem = null;
-            ['daily','weekly','monthly'].forEach(type => {
+            ['daily','weekly','monthly'].forEach(type=>{
                 const ul = document.getElementById(`${type}-tasks-${week}`);
                 if (!ul) return;
-                ul.addEventListener('dragstart', (e) => {
+                ul.addEventListener('dragstart', (e)=>{
                     draggedItem = e.target.closest('li');
                     if (draggedItem) draggedItem.classList.add('opacity-50');
                     e.dataTransfer.effectAllowed = 'move';
-                    e.dataTransfer.setData('text/plain', '');
+                    e.dataTransfer.setData('text/plain','');
                 });
-                ul.addEventListener('dragend', () => {
+                ul.addEventListener('dragend', ()=>{
                     if (draggedItem) draggedItem.classList.remove('opacity-50');
                     draggedItem = null;
                 });
-                ul.addEventListener('dragover', (e) => {
+                ul.addEventListener('dragover', (e)=>{
                     e.preventDefault();
                     e.dataTransfer.dropEffect = 'move';
                 });
-                ul.addEventListener('drop', (e) => {
+                ul.addEventListener('drop', (e)=>{
                     e.preventDefault();
                     if (!draggedItem) return;
                     const targetLi = e.target.closest('li');
                     if (targetLi && draggedItem !== targetLi) {
                         ul.insertBefore(draggedItem, targetLi.nextSibling);
                     }
-                    // New order based on DOM children
-                    const newOrder = Array.from(ul.children).map(li => {
-                        const idx = parseInt(li.dataset.index);
-                        return weekData.tasks[type][idx];
+                    // update data order
+                    const newOrder = Array.from(ul.children).map(li=>{
+                        const idx = parseInt(li.dataset.index,10);
+                        return plannerData[monthKey].weeks[week].tasks[type][idx];
                     });
-                    weekData.tasks[type] = newOrder;
-                    // reindex dataset indices
-                    Array.from(ul.children).forEach((li, idx) => li.dataset.index = idx);
+                    plannerData[monthKey].weeks[week].tasks[type] = newOrder;
+                    // reindex DOM dataset
+                    Array.from(ul.children).forEach((li, idx)=> li.dataset.index = idx);
                     saveData(STORAGE_KEYS.PLANNER, plannerData);
                 });
             });
         };
 
-        // Render deadlines
+        // Deadline rendering
         const renderDeadlineList = () => {
             deadlineList.innerHTML = '';
             if (deadlines.length === 0) {
@@ -528,15 +618,15 @@
                 return;
             }
             const today = new Date().setHours(0,0,0,0);
-            deadlines.forEach((deadline, idx) => {
-                const deadlineDate = new Date(deadline.date).setHours(0,0,0,0);
-                const isOverdue = deadlineDate < today;
+            deadlines.forEach((dl, idx) => {
+                const dlDate = new Date(dl.date).setHours(0,0,0,0);
+                const isOverdue = dlDate < today;
                 const li = document.createElement('li');
-                li.className = `p-4 bg-gray-100 rounded-lg flex items-center justify-between ${isOverdue ? 'overdue' : ''}`;
+                li.className = `p-4 bg-gray-100 rounded-lg flex items-center justify-between ${isOverdue? 'overdue':''}`;
                 li.innerHTML = `
                     <div>
-                        <span class="font-semibold text-gray-700">${new Date(deadline.date).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })}:</span>
-                        <span class="text-gray-600"> ${deadline.task} - ${deadline.client}</span>
+                        <span class="font-semibold text-gray-700">${new Date(dl.date).toLocaleDateString(undefined,{year:'numeric',month:'long',day:'numeric'})}:</span>
+                        <span class="text-gray-600"> ${dl.task} - ${dl.client}</span>
                     </div>
                     <button data-index="${idx}" class="remove-deadline text-red-400 hover:text-red-600 font-bold text-xl cursor-pointer">&times;</button>
                 `;
@@ -544,7 +634,7 @@
             });
         };
 
-        // Render client table
+        // Client table render & helpers
         const renderClientTable = (data) => {
             clientTableBody.innerHTML = '';
             if (data.length === 0) {
@@ -558,7 +648,7 @@
                     <td class="p-4 py-3 align-top">${client.company}</td>
                     <td class="p-4 py-3 align-top">${client.services}</td>
                     <td class="p-4 py-3 align-top text-center">
-                        <input data-index="${client.__idx}" type="checkbox" class="w-4 h-4 text-[#E42642] border-gray-300 rounded-sm focus:ring-[#E42642] bg-gray-100 client-complete-checkbox" ${client.complete ? 'checked' : ''}>
+                        <input data-index="${client.__idx}" type="checkbox" class="w-4 h-4 client-complete-checkbox" ${client.complete ? 'checked' : ''}>
                     </td>
                     <td class="p-4 py-3 align-top text-center">
                         <button data-index="${client.__idx}" class="remove-client-btn text-red-400 hover:text-red-600 font-bold text-xl cursor-pointer">&times;</button>
@@ -569,21 +659,19 @@
         };
 
         const filterAndRenderClients = () => {
-            const mapped = clientData.map((c, i) => ({ ...c, __idx: i }));
-            let filteredData = [...mapped];
-            if (currentFilter === 'complete') filteredData = mapped.filter(client => client.complete);
-            else if (currentFilter === 'incomplete') filteredData = mapped.filter(client => !client.complete);
-            renderClientTable(filteredData);
+            const mapped = clientData.map((c,i)=>({...c,__idx:i}));
+            let filtered = [...mapped];
+            if (currentFilter === 'complete') filtered = mapped.filter(c=>c.complete);
+            if (currentFilter === 'incomplete') filtered = mapped.filter(c=>!c.complete);
+            renderClientTable(filtered);
         };
 
-        // Show/hide error helper
+        // Utility: show/hide error messages
         const showError = (id, show) => document.getElementById(id).classList.toggle('hidden', !show);
 
-        // --- Event listeners ---
-
-        // Month navigation handlers
+        // Event listeners (navigation)
         prevMonthBtn.addEventListener('click', () => {
-            currentMonth.setMonth(currentMonth.getMonth() - 1);
+            currentMonth.setMonth(currentMonth.getMonth()-1);
             const mKey = getMonthKey(currentMonth);
             if (!plannerData[mKey]) plannerData[mKey] = { weeks: [] };
             activeWeek = 1;
@@ -594,9 +682,8 @@
             saveData(STORAGE_KEYS.ACTIVE_WEEK, activeWeek);
             saveData(STORAGE_KEYS.PLANNER, plannerData);
         });
-
         nextMonthBtn.addEventListener('click', () => {
-            currentMonth.setMonth(currentMonth.getMonth() + 1);
+            currentMonth.setMonth(currentMonth.getMonth()+1);
             const mKey = getMonthKey(currentMonth);
             if (!plannerData[mKey]) plannerData[mKey] = { weeks: [] };
             activeWeek = 1;
@@ -608,14 +695,11 @@
             saveData(STORAGE_KEYS.PLANNER, plannerData);
         });
 
-        // Week nav click
+        // Week navigation click
         navigation.addEventListener('click', (e) => {
             if (e.target.classList.contains('nav-btn')) {
-                activeWeek = parseInt(e.target.dataset.week);
-                document.querySelectorAll('.nav-btn').forEach(btn => {
-                    btn.classList.remove('active');
-                    btn.ariaSelected = 'false';
-                });
+                activeWeek = parseInt(e.target.dataset.week,10);
+                document.querySelectorAll('.nav-btn').forEach(btn => { btn.classList.remove('active'); btn.ariaSelected = 'false'; });
                 e.target.classList.add('active');
                 e.target.ariaSelected = 'true';
                 renderWeekContent(activeWeek);
@@ -627,26 +711,28 @@
         contentContainer.addEventListener('change', (e) => {
             if (e.target.classList.contains('task-checkbox')) {
                 const li = e.target.closest('li');
+                if (!li) return;
                 const type = li.dataset.type;
-                const index = parseInt(li.dataset.index);
-                const monthKeyLocal = getMonthKey(currentMonth);
-                plannerData[monthKeyLocal].weeks[activeWeek].tasks[type][index].completed = e.target.checked;
+                const idx = parseInt(li.dataset.index,10);
+                const mKey = getMonthKey(currentMonth);
+                plannerData[mKey].weeks[activeWeek].tasks[type][idx].completed = e.target.checked;
                 saveData(STORAGE_KEYS.PLANNER, plannerData);
-                li.querySelector('label').classList.toggle('completed', e.target.checked);
+                const lbl = li.querySelector('label');
+                if (lbl) lbl.classList.toggle('completed', e.target.checked);
 
-                // Update progress in UI (without full re-render)
-                const progress = calculateProgress(plannerData[monthKeyLocal].weeks[activeWeek].tasks);
+                // update progress UI
+                const progress = calculateProgress(plannerData[mKey].weeks[activeWeek].tasks);
                 const fill = contentContainer.querySelector('.progress-fill');
                 const text = contentContainer.querySelector('.text-sm');
                 if (fill) fill.style.width = `${progress}%`;
                 if (text) text.textContent = `${progress}% Complete`;
-                const monthProgress = calculateMonthlyProgress(plannerData[monthKeyLocal]);
+                const monthProgress = calculateMonthlyProgress(plannerData[mKey]);
                 monthlyProgressFill.style.width = `${monthProgress}%`;
                 monthlyProgressText.textContent = `${monthProgress}% Complete`;
             }
         });
 
-        // Add new deadline with validation
+        // Deadline form
         deadlineForm.addEventListener('submit', (e) => {
             e.preventDefault();
             const dateInput = document.getElementById('deadline-date');
@@ -662,15 +748,13 @@
             deadlines.sort((a,b)=> new Date(a.date) - new Date(b.date));
             renderDeadlineList();
             saveData(STORAGE_KEYS.DEADLINES, deadlines);
-            dateInput.value = '';
-            taskInput.value = '';
-            clientInput.value = '';
+            dateInput.value=''; taskInput.value=''; clientInput.value='';
         });
 
         // Remove deadline (delegated)
         deadlineList.addEventListener('click', (e) => {
             if (e.target.classList.contains('remove-deadline')) {
-                const idx = parseInt(e.target.dataset.index);
+                const idx = parseInt(e.target.dataset.index,10);
                 if (!isNaN(idx)) {
                     deadlines.splice(idx,1);
                     saveData(STORAGE_KEYS.DEADLINES, deadlines);
@@ -679,17 +763,13 @@
             }
         });
 
-        // Add client modal controls
-        addClientBtn.addEventListener('click', () => {
-            addClientModal.style.display = 'flex';
-            newClientCompanyInput.focus();
-        });
-        closeModalBtn.addEventListener('click', () => addClientModal.style.display = 'none');
-        cancelNewClientBtn.addEventListener('click', () => addClientModal.style.display = 'none');
-        addClientModal.addEventListener('keydown', (e) => { if (e.key === 'Escape') addClientModal.style.display = 'none'; });
+        // Client modal controls & actions
+        addClientBtn.addEventListener('click', () => { addClientModal.style.display='flex'; newClientCompanyInput.focus(); });
+        closeAddClientBtn.addEventListener('click', ()=> addClientModal.style.display='none');
+        cancelNewClientBtn.addEventListener('click', ()=> addClientModal.style.display='none');
+        addClientModal.addEventListener('keydown', (e)=> { if (e.key === 'Escape') addClientModal.style.display='none'; });
 
-        // Add new client
-        newClientForm.addEventListener('submit', (e) => {
+        newClientForm.addEventListener('submit', (e)=> {
             e.preventDefault();
             const company = newClientCompanyInput.value.trim();
             const services = newClientServicesInput.value.trim();
@@ -700,15 +780,15 @@
             if (!valid) return;
             clientData.push({ company, services, complete: false });
             filterAndRenderClients();
-            addClientModal.style.display = 'none';
+            addClientModal.style.display='none';
             saveData(STORAGE_KEYS.CLIENTS, clientData);
             newClientForm.reset();
         });
 
-        // Client checkbox toggle
+        // Client checkbox toggle (delegated)
         clientTableBody.addEventListener('change', (e) => {
             if (e.target.classList.contains('client-complete-checkbox')) {
-                const idx = parseInt(e.target.dataset.index);
+                const idx = parseInt(e.target.dataset.index,10);
                 if (!isNaN(idx)) {
                     clientData[idx].complete = e.target.checked;
                     filterAndRenderClients();
@@ -717,37 +797,37 @@
             }
         });
 
-        // Remove client
+        // Remove client (delegated)
         clientTableBody.addEventListener('click', (e) => {
             if (e.target.classList.contains('remove-client-btn')) {
-                const idx = parseInt(e.target.dataset.index);
+                const idx = parseInt(e.target.dataset.index,10);
                 if (!isNaN(idx)) {
-                    lastRemovedClient = clientData.splice(idx, 1)[0];
+                    lastRemovedClient = clientData.splice(idx,1)[0];
                     filterAndRenderClients();
-                    undoBtn.classList.remove('hidden');
+                    undoClientBtn.classList.remove('hidden');
                     saveData(STORAGE_KEYS.CLIENTS, clientData);
                 }
             }
         });
 
-        // Undo remove
-        undoBtn.addEventListener('click', () => {
+        // Undo client removal
+        undoClientBtn.addEventListener('click', () => {
             if (lastRemovedClient) {
                 clientData.push(lastRemovedClient);
-                filterAndRenderClients();
                 lastRemovedClient = null;
-                undoBtn.classList.add('hidden');
+                undoClientBtn.classList.add('hidden');
+                filterAndRenderClients();
                 saveData(STORAGE_KEYS.CLIENTS, clientData);
             }
         });
 
         // Filter clients
-        filterClientsSelect.addEventListener('change', (e) => {
+        filterClientsSelect.addEventListener('change', (e)=> {
             currentFilter = e.target.value;
             filterAndRenderClients();
         });
 
-        // Sorting for client headers
+        // Sorting client table headers
         sortableHeaders.forEach(header => {
             header.addEventListener('click', (e) => {
                 const sortKey = e.target.dataset.sortKey;
@@ -755,33 +835,44 @@
                 sortDirection[sortKey] = direction;
                 e.target.textContent = e.target.textContent.replace(/ [▲▼]$/, '') + (direction === 'asc' ? ' ▲' : ' ▼');
                 clientData.sort((a,b) => {
-                    const aValue = String(a[sortKey] || '').toLowerCase();
-                    const bValue = String(b[sortKey] || '').toLowerCase();
-                    return direction === 'asc' ? aValue.localeCompare(bValue) : bValue.localeCompare(aValue);
+                    const aV = String(a[sortKey] || '').toLowerCase();
+                    const bV = String(b[sortKey] || '').toLowerCase();
+                    return direction === 'asc' ? aV.localeCompare(bV) : bV.localeCompare(aV);
                 });
                 filterAndRenderClients();
             });
         });
 
-        // Notifications for overdue deadlines (single check on load)
-        if (Notification && Notification.permission === 'default') Notification.requestPermission();
-        if (Notification && Notification.permission === 'granted') {
+        // Notifications for overdue deadlines (one-time on load)
+        if (window.Notification && Notification.permission === 'default') Notification.requestPermission();
+        if (window.Notification && Notification.permission === 'granted') {
             const today = new Date().setHours(0,0,0,0);
-            deadlines.forEach(dl => {
+            deadlines.forEach(dl=>{
                 if (new Date(dl.date).setHours(0,0,0,0) < today && !dl.notified) {
-                    new Notification('Overdue Deadline', { body: `${dl.task} for ${dl.client}` });
+                    new Notification('Overdue Deadline',{body:`${dl.task} for ${dl.client}`});
                     dl.notified = true;
                     saveData(STORAGE_KEYS.DEADLINES, deadlines);
                 }
             });
         }
 
-        // --- Initial render calls ---
+        // Initial renders
         renderMonthNavigation();
         renderWeekNavigation();
         renderWeekContent(activeWeek);
         renderDeadlineList();
         filterAndRenderClients();
+
+        // expose some functions for inline handlers
+        window.removeDeadline = function(idx){
+            if (typeof idx !== 'number') return;
+            deadlines.splice(idx,1);
+            saveData(STORAGE_KEYS.DEADLINES, deadlines);
+            renderDeadlineList();
+        };
+        window.editTaskExternal = openTaskEditor; // optional external use
+
+        // end DOMContentLoaded
     });
     </script>
 </body>
