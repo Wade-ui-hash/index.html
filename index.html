@@ -48,6 +48,10 @@
         .genre-row{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px;border-radius:8px}
         .genre-actions button{margin-left:6px}
         .small-muted{font-size:.875rem;color:#6b7280}
+        /* welcome modal deadline badges */
+        .badge-red{color:#9b1c1c;background:#fee2e2;padding:.35rem .5rem;border-radius:.5rem;font-weight:600}
+        .badge-yellow{color:#92400e;background:#fef3c7;padding:.35rem .5rem;border-radius:.5rem;font-weight:600}
+        .badge-green{color:#065f46;background:#dcfce7;padding:.35rem .5rem;border-radius:.5rem;font-weight:600}
         /* responsive small tune */
         @media (max-width:640px){
             .music-top-right{position:static;margin-top:.5rem}
@@ -148,6 +152,34 @@
                 </div>
             </section>
         </main>
+    </div>
+
+    <!-- Welcome / Deadlines Popup (shows on every load) -->
+    <div id="welcome-modal" class="modal">
+        <div class="modal-content">
+            <span id="welcome-close" class="close-btn">&times;</span>
+            <h2 class="text-2xl font-bold mb-2">Welcome back, Great Conqueror.</h2>
+            <p class="text-gray-600 mb-4">Here are your current deadlines:</p>
+
+            <div id="welcome-deadlines-container" class="mb-4">
+                <!-- Populated by JS -->
+                <ul id="welcome-deadlines-list" class="space-y-2"></ul>
+            </div>
+
+            <h4 class="font-semibold mb-2">Add / Edit Deadlines</h4>
+            <div id="welcome-deadline-form" class="grid grid-cols-1 md:grid-cols-3 gap-2 items-end mb-4">
+                <input id="welcome-deadline-task" type="text" placeholder="Task / Project name" class="rounded-md border-gray-300 p-2 md:col-span-2">
+                <input id="welcome-deadline-date" type="date" class="rounded-md border-gray-300 p-2">
+                <div class="md:col-span-3 flex gap-2 mt-2">
+                    <button id="welcome-add-deadline" class="bg-[#E42642] text-white py-2 px-4 rounded-md">Add Deadline</button>
+                    <button id="welcome-cancel-edit" class="bg-gray-200 text-gray-800 py-2 px-4 rounded-md">Cancel Edit</button>
+                </div>
+            </div>
+
+            <div class="flex justify-end gap-2">
+                <button id="welcome-continue" class="bg-[#10b981] text-white py-2 px-4 rounded-md">Continue</button>
+            </div>
+        </div>
     </div>
 
     <!-- Add Client Modal -->
@@ -407,6 +439,16 @@
         const newGenreLink = document.getElementById('new-genre-link');
         const addGenreBtn = document.getElementById('add-genre-btn');
 
+        // Welcome modal refs
+        const welcomeModal = document.getElementById('welcome-modal');
+        const welcomeClose = document.getElementById('welcome-close');
+        const welcomeDeadlinesList = document.getElementById('welcome-deadlines-list');
+        const welcomeAddBtn = document.getElementById('welcome-add-deadline');
+        const welcomeTaskInput = document.getElementById('welcome-deadline-task');
+        const welcomeDateInput = document.getElementById('welcome-deadline-date');
+        const welcomeCancelEdit = document.getElementById('welcome-cancel-edit');
+        const welcomeContinue = document.getElementById('welcome-continue');
+
         /* =======================
            helper functions
            ======================= */
@@ -435,7 +477,7 @@
             return total>0?Math.round((done/total)*100):0;
         };
         const escapeHtml = (unsafe) => {
-            return unsafe.replace(/[&<>"']/g, function(m){ return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'})[m]; });
+            return String(unsafe).replace(/[&<>"']/g, function(m){ return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'})[m]; });
         };
 
         /* =======================
@@ -617,7 +659,7 @@
             });
         };
 
-        // Deadlines render
+        // Deadlines render (main section)
         const renderDeadlineList = () => {
             deadlineList.innerHTML = '';
             if (deadlines.length === 0) {
@@ -633,7 +675,7 @@
                 li.innerHTML = `
                     <div>
                         <span class="font-semibold text-gray-700">${new Date(dl.date).toLocaleDateString(undefined,{year:'numeric',month:'long',day:'numeric'})}:</span>
-                        <span class="text-gray-600"> ${dl.task} - ${dl.client}</span>
+                        <span class="text-gray-600"> ${dl.task} - ${dl.client || ''}</span>
                     </div>
                     <button data-index="${idx}" class="remove-deadline text-red-400 hover:text-red-600 font-bold text-xl cursor-pointer">&times;</button>
                 `;
@@ -1024,6 +1066,149 @@
         });
 
         /* =======================
+           Welcome modal: show deadlines on load and allow add/edit/delete there
+           ======================= */
+
+        // Helper: days between today and date (date string)
+        const daysUntil = (dateStr) => {
+            const today = new Date();
+            today.setHours(0,0,0,0);
+            const d = new Date(dateStr);
+            d.setHours(0,0,0,0);
+            const diff = Math.ceil((d - today) / (1000 * 60 * 60 * 24));
+            return diff; // can be negative if past
+        };
+
+        const renderWelcomeDeadlines = () => {
+            welcomeDeadlinesList.innerHTML = '';
+            if (!deadlines || deadlines.length === 0) {
+                const li = document.createElement('li');
+                li.className = 'text-gray-600';
+                li.textContent = 'No deadlines pending.';
+                welcomeDeadlinesList.appendChild(li);
+                return;
+            }
+
+            // sort by date ascending
+            const sorted = deadlines.slice().sort((a,b)=> new Date(a.date) - new Date(b.date));
+            sorted.forEach((dl, idx) => {
+                const days = daysUntil(dl.date);
+                let badgeClass = 'badge-green';
+                let label = `In ${days} days`;
+                if (days <= 2) { badgeClass = 'badge-red'; label = days < 0 ? `Overdue ${Math.abs(days)}d` : `Due in ${days}d`; }
+                else if (days <= 7) { badgeClass = 'badge-yellow'; label = `Due in ${days}d`; }
+
+                const li = document.createElement('li');
+                li.className = 'flex items-center justify-between bg-gray-50 p-3 rounded-md';
+                li.dataset.index = idx;
+                li.innerHTML = `
+                    <div class="flex-1">
+                        <div class="font-semibold">${escapeHtml(dl.task)}</div>
+                        <div class="text-sm text-gray-600">${new Date(dl.date).toLocaleDateString(undefined,{year:'numeric',month:'short',day:'numeric'})} ${dl.client ? '• ' + escapeHtml(dl.client) : ''}</div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="${badgeClass} text-sm">${escapeHtml(label)}</span>
+                        <div class="flex gap-1">
+                            <button class="edit-welcome-deadline text-yellow-500 px-2 py-1 rounded">Edit</button>
+                            <button class="delete-welcome-deadline text-red-500 px-2 py-1 rounded">Delete</button>
+                        </div>
+                    </div>
+                `;
+                welcomeDeadlinesList.appendChild(li);
+            });
+        };
+
+        // Open welcome modal on each load
+        const openWelcomeModal = () => {
+            renderWelcomeDeadlines();
+            welcomeModal.style.display = 'flex';
+        };
+        const closeWelcomeModal = () => {
+            welcomeModal.style.display = 'none';
+        };
+
+        // Add deadline from welcome modal
+        welcomeAddBtn.addEventListener('click', () => {
+            const task = (welcomeTaskInput.value || '').trim();
+            const date = (welcomeDateInput.value || '').trim();
+            if (!task) { welcomeTaskInput.focus(); return; }
+            if (!date) { welcomeDateInput.focus(); return; }
+            // add with optional empty client
+            deadlines.push({ date, task, client: '' });
+            // sort, save, update both views
+            deadlines.sort((a,b)=> new Date(a.date) - new Date(b.date));
+            saveData(STORAGE_KEYS.DEADLINES, deadlines);
+            renderWelcomeDeadlines();
+            renderDeadlineList();
+            welcomeTaskInput.value = '';
+            welcomeDateInput.value = '';
+        });
+
+        // Delegated edit/delete in welcome modal
+        welcomeDeadlinesList.addEventListener('click', (e) => {
+            const li = e.target.closest('li');
+            if (!li) return;
+            const indexInSortedView = Array.from(welcomeDeadlinesList.children).indexOf(li);
+            // Because we sorted visually, find the correct original index by date ordering
+            const sorted = deadlines.slice().sort((a,b)=> new Date(a.date) - new Date(b.date));
+            const targetItem = sorted[indexInSortedView];
+            const origIndex = deadlines.findIndex(d => d.date === targetItem.date && d.task === targetItem.task && d.client === targetItem.client);
+            if (e.target.classList.contains('delete-welcome-deadline')) {
+                if (origIndex >= 0) {
+                    if (!confirm(`Delete deadline "${deadlines[origIndex].task}" on ${deadlines[origIndex].date}?`)) return;
+                    deadlines.splice(origIndex,1);
+                    saveData(STORAGE_KEYS.DEADLINES, deadlines);
+                    renderWelcomeDeadlines();
+                    renderDeadlineList();
+                }
+            } else if (e.target.classList.contains('edit-welcome-deadline')) {
+                // show inline editor inside the li
+                const d = deadlines[origIndex];
+                li.innerHTML = `
+                    <div class="flex-1">
+                        <input type="text" class="w-full rounded-md border-gray-300 p-2 mb-1 edit-welcome-task" value="${escapeHtml(d.task)}">
+                        <input type="date" class="rounded-md border-gray-300 p-2 edit-welcome-date" value="${d.date}">
+                        <input type="text" class="w-full rounded-md border-gray-300 p-2 mt-1 edit-welcome-client" placeholder="Client (optional)" value="${escapeHtml(d.client || '')}">
+                    </div>
+                    <div class="flex flex-col gap-2 items-end">
+                        <div>
+                            <button class="save-welcome-deadline bg-[#10b981] text-white py-1 px-3 rounded">Save</button>
+                            <button class="cancel-welcome-deadline bg-gray-200 text-black py-1 px-3 rounded">Cancel</button>
+                        </div>
+                    </div>
+                `;
+                const saveBtn = li.querySelector('.save-welcome-deadline');
+                const cancelBtn = li.querySelector('.cancel-welcome-deadline');
+                saveBtn.addEventListener('click', () => {
+                    const newTask = li.querySelector('.edit-welcome-task').value.trim();
+                    const newDate = li.querySelector('.edit-welcome-date').value;
+                    const newClient = li.querySelector('.edit-welcome-client').value.trim();
+                    if (!newTask) { alert('Task cannot be empty'); return; }
+                    if (!newDate) { alert('Please select a date'); return; }
+                    // update original entry
+                    deadlines[origIndex] = { task: newTask, date: newDate, client: newClient };
+                    deadlines.sort((a,b)=> new Date(a.date) - new Date(b.date));
+                    saveData(STORAGE_KEYS.DEADLINES, deadlines);
+                    renderWelcomeDeadlines();
+                    renderDeadlineList();
+                });
+                cancelBtn.addEventListener('click', () => {
+                    renderWelcomeDeadlines();
+                });
+            }
+        });
+
+        welcomeCancelEdit.addEventListener('click', () => {
+            welcomeTaskInput.value = '';
+            welcomeDateInput.value = '';
+            renderWelcomeDeadlines();
+        });
+
+        welcomeClose.addEventListener('click', closeWelcomeModal);
+        welcomeContinue.addEventListener('click', closeWelcomeModal);
+        window.addEventListener('click', (e)=> { if (e.target === welcomeModal) closeWelcomeModal(); });
+
+        /* =======================
            final initial renders
            ======================= */
         renderMonthNavigation();
@@ -1031,6 +1216,10 @@
         renderWeekContent(activeWeek);
         renderDeadlineList();
         filterAndRenderClients();
+        renderGenres();
+
+        // Open welcome modal on every page load
+        openWelcomeModal();
 
         // Expose removeDeadline for inline use (if needed)
         window.removeDeadline = function(idx){
